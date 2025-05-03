@@ -1,11 +1,12 @@
 use crate::hand_table::*;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default)] // 
 pub(crate) struct Hand {
-    cards: [usize; 7],
+    cards: [usize; 7], // usize型の配列、長さ7。usize:PCに最適化されたサイズのBitで定義される。ほぼ64bit。
     num_cards: usize,
 }
 
+// `#[inline]`の意味: 関数やメソッドのインライン展開をコンパイラに対して「推奨」する。
 #[inline]
 fn keep_n_msb(mut x: i32, n: i32) -> i32 {
     let mut ret = 0;
@@ -33,7 +34,7 @@ fn find_straight(rankset: i32) -> i32 {
 impl Hand {
     #[inline]
     pub fn new() -> Hand {
-        Hand::default()
+        Hand::default() // struct Hand を、初期値すべて0で実装してインスタンス化する（初期化）
     }
 
     #[inline]
@@ -52,6 +53,7 @@ impl Hand {
     #[inline]
     pub fn evaluate(&self) -> u16 {
         HAND_TABLE.binary_search(&self.evaluate_internal()).unwrap() as u16
+        // binary_search: ソート済の配列から、該当する数値のIndex番号を2分探索で取得する。つまり役の強さ順位を取得する。
     }
 
     fn evaluate_internal(&self) -> i32 {
@@ -61,26 +63,36 @@ impl Hand {
         let mut rank_count = [0i32; 13];
 
         for &card in &self.cards {
-            let rank = card / 4;
-            let suit = card % 4;
-            rankset |= 1 << rank;
-            rankset_suit[suit] |= 1 << rank;
-            rank_count[rank] += 1;
+            let rank = card / 4; // カードの数値は4の倍数（2*4=8, J*4=44）。これを強さRankとしている。
+            let suit = card % 4; // スーテッドによって、+0~+3(♣♦♥♠) しているため、これでスートを判定できる。
+            rankset |= 1 << rank; // bit演算。rank分bitを左にシフトして付与する。`389QQAA` -> 0b0100001100202
+            rankset_suit[suit] |= 1 << rank; // 4♥9♠ -> [0b0000000000000, 0b0b0000000000000, 0b0000000000100, 0b0000100000000]
+            rank_count[rank] += 1; // 27KK4 -> [1,0,1,0,0,1,0,0,0,0,0,0,2,0]
         }
 
         for rank in 0..13 {
-            rankset_of_count[rank_count[rank] as usize] |= 1 << rank;
+            rankset_of_count[rank_count[rank] as usize] |= 1 << rank; // ペアの強さと数を確認する。
+            // rank: rankset_of_count
+            // 0:  [0b0000000000000,0b0000000000001,0,0,0]
+            // 2:  [0b0000000000010,0b0000000000101,0,0,0]
+            // 5:  [0b0000000011010,0b0000000100101,0,0,0]
+            // 11: [0b0011111011010,0b0000000100101,0b0100000000000,0,0,0]
         }
 
+        // flushが完成していれば、suit番号を格納。なければ-1のまま。
         let mut flush_suit: i32 = -1;
         for suit in 0..4 {
-            if rankset_suit[suit as usize].count_ones() >= 5 {
-                flush_suit = suit;
+            if rankset_suit[suit as usize].count_ones() >= 5 { // count_ones(): 整数ビットが立っている数を返す
+                flush_suit = suit; 
             }
         }
 
         let is_straight = find_straight(rankset);
 
+        // Handの強さをBitで演算している。
+        // 26-31 : 役の強さ
+        // 13-25 : 役の数値の強さ（4pairの数字）
+        // 0-12  : キッカーの強さ
         if flush_suit >= 0 {
             let is_straight_flush = find_straight(rankset_suit[flush_suit as usize]);
             if is_straight_flush != 0 {

@@ -1,3 +1,8 @@
+# About this repositry
+This repositry is cloned from `https://github.com/b-inary/postflop-solver`.
+I folked it to understand rust and gto solver code with japanese comment.
+Below, original readme exists.
+
 # postflop-solver
 
 > [!IMPORTANT]

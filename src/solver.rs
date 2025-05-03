@@ -1,3 +1,5 @@
+// これがMainのファイル。
+
 use crate::interface::*;
 use crate::mutex_like::*;
 use crate::sliceop::*;

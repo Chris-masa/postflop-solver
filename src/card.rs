@@ -73,12 +73,12 @@ pub(crate) struct StrengthItem {
 pub(crate) type SwapList = [Vec<(u16, u16)>; 2];
 
 type IsomorphismData = (
-    Vec<u8>,
-    Vec<Card>,
-    [SwapList; 4],
-    Vec<Vec<u8>>,
-    [Vec<Card>; 4],
-    [[SwapList; 4]; 4],
+    Vec<u8>,                 // suit_isomorphism: スートの再マッピング
+    Vec<Card>,              // isomorphism_card_turn: ターンの代表カード群
+    [SwapList; 4],          // isomorphism_swap_turn: スートごとのスワップパターン
+    Vec<Vec<u8>>,           // isomorphism_ref_turn: 同型参照インデックス
+    [Vec<Card>; 4],         // isomorphic_card_buckets: 同型カードの分類
+    [[SwapList; 4]; 4],     // isomorphism_swap_river: リバーにおけるスワップ
 );
 
 /// Returns an index of the given card pair.
@@ -107,15 +107,17 @@ impl CardConfig {
         &self,
         private_cards: &PrivateCards,
     ) -> (Indices, Vec<Indices>, Vec<Indices>) {
+        // Flopに出現する可能性のあるカードIndexを作るために、すでに配られたカードを格納する。
         let ret_flop = if self.turn == NOT_DEALT {
             [
                 (0..private_cards[0].len() as u16).collect(),
                 (0..private_cards[1].len() as u16).collect(),
             ]
         } else {
-            Indices::default()
+            Indices::default() // ターン以降であれば必要ないので空配列を返す。
         };
 
+        // turnに出現しないカード一覧を格納。
         let mut ret_turn = vec![Indices::default(); 52];
         for board in 0..52 {
             if !self.flop.contains(&board)
@@ -127,6 +129,7 @@ impl CardConfig {
             }
         }
 
+        // riverでは、ターンカードとの組み合わせで出現数を確定させる。flopからゲームが始まるため。
         let mut ret_river = vec![Indices::default(); 52 * 51 / 2];
         for board1 in 0..52 {
             for board2 in board1 + 1..52 {
@@ -149,7 +152,8 @@ impl CardConfig {
         board1: Card,
         board2: Card,
     ) -> [Vec<u16>; 2] {
-        let mut ret = [
+        // プレイヤーごとに（敵のハンドはわからないので）、ターン/リバーで落ちる可能性のあるハンドを作成
+        let mut ret = [ // 初期化
             Vec::with_capacity(private_cards[0].len()),
             Vec::with_capacity(private_cards[1].len()),
         ];
@@ -244,7 +248,9 @@ impl CardConfig {
         ret
     }
 
-    pub(crate) fn isomorphism(&self, private_cards: &[Vec<(Card, Card)>; 2]) -> IsomorphismData {
+    pub(crate) fn (&self, private_cards: &[Vec<(Card, Card)>; 2]) -> IsomorphismData {
+        // ★スートの同型性を考慮して、等価状態の表現を生成。計算量を削減する。
+        // 正直、この機能は結果保存の時にだけ使えればよさそう。
         let mut suit_isomorphism = [0; 4];
         let mut next_index = 1;
         'outer: for suit2 in 1..4 {
@@ -351,9 +357,9 @@ impl CardConfig {
         }
 
         (
-            isomorphism_ref_turn,
-            isomorphism_card_turn,
-            isomorphism_swap_turn,
+            isomorphism_ref_turn, // 代表パターンのグループ化
+            isomorphism_card_turn, // 代表カード群
+            isomorphism_swap_turn, //スートを変換したときの手札インデックススワップ情報
             isomorphism_ref_river,
             isomorphism_card_river,
             isomorphism_swap_river,
