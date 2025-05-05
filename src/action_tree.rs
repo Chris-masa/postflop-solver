@@ -3,7 +3,14 @@ use crate::card::*;
 use crate::mutex_like::*;
 
 #[cfg(feature = "bincode")]
-use bincode::{Decode, Encode};
+use bincode::{
+    Decode,
+    Encode,
+    BorrowDecode,
+    de::Decoder,
+    error::DecodeError,
+    error::EncodeError,
+    enc::Encoder};
 
 pub(crate) const PLAYER_OOP: u8 = 0;
 pub(crate) const PLAYER_IP: u8 = 1;
@@ -147,13 +154,43 @@ pub struct ActionTree {
 }
 
 #[derive(Default)]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 pub(crate) struct ActionTreeNode {
     pub(crate) player: u8,
     pub(crate) board_state: BoardState,
     pub(crate) amount: i32,
     pub(crate) actions: Vec<Action>,
     pub(crate) children: Vec<MutexLike<ActionTreeNode>>,
+}
+
+// Todo: よくわからないままに修正してしまった部分。上手く動くか要確認。
+#[cfg(feature = "bincode")]
+impl Decode<()> for ActionTreeNode {
+    fn decode<D: Decoder<Context = ()>>(
+        decoder: &mut D,
+    ) -> Result<Self,DecodeError> {
+        Ok(Self {
+            player: u8::decode(decoder)?,
+            board_state: BoardState::decode(decoder)?,
+            amount: i32::decode(decoder)?,
+            actions: Vec::<Action>::decode(decoder)?,
+            children: Vec::<MutexLike<ActionTreeNode>>::decode(decoder)?,
+        })
+    }
+}
+
+#[cfg(feature = "bincode")]
+impl Encode for ActionTreeNode {
+    fn encode<E: Encoder>(
+        &self,
+        encoder: &mut E,
+    ) -> Result<(), EncodeError> {
+        self.player.encode(encoder)?;
+        self.board_state.encode(encoder)?;
+        self.amount.encode(encoder)?;
+        self.actions.encode(encoder)?;
+        self.children.encode(encoder)?;
+        Ok(())
+    }
 }
 
 struct BuildTreeInfo {

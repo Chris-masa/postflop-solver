@@ -99,17 +99,17 @@ impl<T: Encode> Encode for MutexLike<T> {
 }
 
 #[cfg(feature = "bincode")]
-impl<T: Decode> Decode for MutexLike<T> {
+impl<T: Decode<()>> Decode<()> for MutexLike<T> {
     #[inline]
-    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+    fn decode<D: Decoder<Context = ()>>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self::new(T::decode(decoder)?))
     }
 }
 
 #[cfg(feature = "bincode")]
-impl<'de, T: BorrowDecode<'de>> BorrowDecode<'de> for MutexLike<T> {
+impl<'de, T: BorrowDecode<'de, ()>> BorrowDecode<'de, ()> for MutexLike<T> { // 'de: 読み込まれたデータは、`'de`というライフタイムの間デシリアライズのライフタイムを示す
     #[inline]
-    fn borrow_decode<D: BorrowDecoder<'de>>(decoder: &mut D) -> Result<Self, DecodeError> {
+    fn borrow_decode<D: BorrowDecoder<'de, Context=()>>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self::new(T::borrow_decode(decoder)?))
     }
 }
