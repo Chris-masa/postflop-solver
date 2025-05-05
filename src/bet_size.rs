@@ -69,6 +69,7 @@ pub enum BetSize {
     /// Constant bet size of the first element with a raise cap of the second element.
     ///
     /// If the second element is `0`, there is no raise cap.
+    /// 第二引数はポットリミット用？
     Additive(i32, i32),
 
     /// Geometric bet size for `i32` streets with maximum pot-relative size of `f64`.

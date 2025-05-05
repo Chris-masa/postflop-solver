@@ -1,3 +1,8 @@
+/// このコードは、solver.rs や interface.rs から呼び出され、
+// プレイヤーのレンジとフロップに応じたポストフロップ戦略の精密計算に利用される。
+// つまるところ、フォール度したプレイヤーのレンジは限られているから、
+// そのレンジの出現確率を元に、対戦相手とターン/リバーの出現確率から下げなければならないという話。
+
 use crate::atomic_float::*;
 use crate::card::*;
 use crate::range::*;
@@ -121,11 +126,11 @@ const COMB_TABLE: [[usize; 49]; 8] = [
 #[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 pub struct BunchingData {
     // input
-    fold_ranges: Vec<Range>,
-    flop: [Card; 3],
+    fold_ranges: Vec<Range>,        // フォールドレンジのリスト
+    flop: [Card; 3],                // フロップのカード3枚
 
     // current status
-    phase: u8,
+    phase: u8,                      // 処理ステート（0:未処理, 1〜3）
     progress_percent: u8,
 
     // combination table (computed in phase 1)
@@ -142,18 +147,20 @@ pub struct BunchingData {
     result6: Vec<AtomicF32>,
 }
 
+// bit -> int への変換
 #[inline]
 fn mask_to_index(mut mask: u64, k: usize) -> usize {
     let mut index = 0;
     for i in 0..k {
         assert!(mask != 0);
-        let tz = mask.trailing_zeros();
+        let tz = mask.trailing_zeros(); // mask の中で最下位（右側）に立っているビットが何ビット目かを求める
         index += COMB_TABLE[i][tz as usize];
         mask &= mask - 1;
     }
     index
 }
 
+// int -> bit への変換
 #[inline]
 fn index_to_mask(mut index: usize, k: usize) -> u64 {
     let mut mask = 0;

@@ -22,6 +22,11 @@ pub(crate) fn for_each_child<T: GameNode, OP: Fn(usize) + Sync + Send>(node: &T,
 }
 
 /// Executes `op` for each child.
+/// not が付いているので、`rayon`が有効なときと無効なときで挙動が変わるということ。
+////  # rayonあり（並列実行）
+////  cargo build --features rayon
+////  # rayonなし（シングルスレッド実行）
+////  cargo build 
 #[cfg(not(feature = "rayon"))]
 #[inline]
 pub(crate) fn for_each_child<T: GameNode, OP: Fn(usize) + Sync + Send>(node: &T, op: OP) {

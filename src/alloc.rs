@@ -19,6 +19,12 @@ pub(crate) fn align_up(size: usize) -> usize {
 /// using this allocator can significantly improve the performance in such an environment.
 /// Note that this allocator assumes that `allocate` and `deallocate` are called in a stack-like
 /// manner, and it panics if this assumption is not satisfied.
+
+/// Rustの効力をあえて使わず、C++的な手動割り当てを行っている。
+/// WASM の動作環境、効率性についてはまだわからず、そこを効率化してくれるライブラリがあるのか、
+/// それとも根本的にどうしようもない問題なのか、勉強する必要がありそう。
+/// 個人的には、可能であればこのような実装は排除して、Rustの性能に乗っかりたい。
+
 #[derive(Clone)]
 pub(crate) struct StackAlloc;
 

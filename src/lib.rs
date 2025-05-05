@@ -1,3 +1,6 @@
+// クレーと外部からでもモジュールを使用できるようにするためのファイル。
+// 外部からこのクレートライブラリをImportした時、使用できる機能を公開している。
+
 //! An open-source postflop solver library.
 //!
 //! # Examples

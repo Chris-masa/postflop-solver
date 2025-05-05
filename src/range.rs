@@ -409,11 +409,14 @@ impl Default for Range {
     }
 }
 
+////////////////////////////
+/// ここからRangeの実装 /////
+////////////////////////////
 impl Range {
     /// Creates an empty range.
     #[inline]
     pub fn new() -> Self {
-        Self::default()
+        Self::default() // `impl Default for Range`を実施する
     }
 
     /// Creates a full range.
@@ -447,6 +450,7 @@ impl Range {
     }
 
     /// Attempts to create a range from a list of hands with their weights.
+    // weight: 存在確率。0.0~0.9。
     #[inline]
     pub fn from_hands_weights(hands: &[(Card, Card)], weights: &[f32]) -> Result<Self, String> {
         let mut range = Self::default();
@@ -467,6 +471,7 @@ impl Range {
     /// If there are no dead cards, pass `0` to `dead_cards_mask`.
     /// The returned hands are sorted in lexicographical order.
     pub fn get_hands_weights(&self, dead_cards_mask: u64) -> (Vec<(Card, Card)>, Vec<f32>) {
+        // dead_cards_mask: ボードカードや自分のカードの除外など
         let mut hands = Vec::with_capacity(128);
         let mut weights = Vec::with_capacity(128);
 
@@ -684,6 +689,7 @@ impl Range {
     }
 
     #[inline]
+    // 与えられたIndex群について、存在確率が同じかどうかを検証する。
     fn is_same_weight(&self, indices: &[usize]) -> bool {
         let weight = self.data[indices[0]];
         indices.iter().all(|&i| self.data[i] == weight)
@@ -699,6 +705,7 @@ impl Range {
     }
 
     #[inline]
+    // 与えられたIndex群について、存在確率をSetする
     fn set_weight(&mut self, indices: &[usize], weight: f32) {
         for &i in indices {
             self.data[i] = weight;
@@ -707,11 +714,14 @@ impl Range {
 
     #[inline]
     fn update_with_singleton(&mut self, combo: &str, weight: f32) -> Result<(), String> {
+        // conbo: rangeに含まれるカードセットのこと。
         let (rank1, rank2, suitedness) = parse_singleton(combo)?;
         self.set_weight(&indices_with_suitedness(rank1, rank2, suitedness), weight);
         Ok(())
     }
 
+
+    /// ポーカーで使われる「89s+」とか「44+」「9Ko-QKo」などを処理するための関数群
     #[inline]
     fn update_with_plus_range(&mut self, range: &str, weight: f32) -> Result<(), String> {
         let lowest_combo = &range[..range.len() - 1];
@@ -815,12 +825,13 @@ impl Range {
         }
     }
 
+    // 特定の2枚のカードについて「スートを指定しなくても一意に表現できるかどうか」を判定する。
     fn can_unsuit(&self, rank1: u8) -> bool {
         for rank2 in 0..rank1 {
             let same_suited = self.is_same_weight(&suited_indices(rank1, rank2));
             let same_offsuit = self.is_same_weight(&offsuit_indices(rank1, rank2));
-            let weight_suited = self.get_weight_suited(rank1, rank2);
-            let weight_offsuit = self.get_weight_offsuit(rank1, rank2);
+            let weight_suited = self.get_weight_suited(rank1, rank2); // 該当Handの存在確率を取得
+            let weight_offsuit = self.get_weight_offsuit(rank1, rank2); // 該当Handの存在確率を取得
             if (same_suited && same_offsuit && weight_suited != weight_offsuit)
                 || (same_suited != same_offsuit && weight_suited > 0.0 && weight_offsuit > 0.0)
             {
@@ -830,6 +841,7 @@ impl Range {
         true
     }
 
+    // 2枚のカードの組み合わせのうち、「ハイカード（非ペア・非連番）」に該当する文字列の一覧を生成
     fn high_cards_strings(&self, result: &mut Vec<String>, rank1: u8, suitedness: Suitedness) {
         let rank1_char = rank_to_char(rank1).unwrap();
         let mut start: Option<(u8, f32)> = None;
@@ -877,6 +889,7 @@ impl Range {
         }
     }
 
+    // 「2枚のカードの具体的なスート込み表現」（例: "AhKh"）のリストを返す。
     fn suit_specified_strings(&self, result: &mut Vec<String>) {
         // pairs
         for rank in (0..13).rev() {
@@ -952,6 +965,11 @@ impl Range {
     }
 }
 
+// FromStrの実装をすることで、.parse()などが使えるようになる（.parse()は内部でFromStrを使用している）
+// let range = Range::from_str("QQ+,AKo")?;
+// またはより自然に：
+// let range: Range = "QQ+,AKo".parse()?;  // ← これが主目的
+// ちなみに、FromStrはインターフェースで、その定義に沿って関数を実装している。つまりトレイト実装
 impl FromStr for Range {
     type Err = String;
 

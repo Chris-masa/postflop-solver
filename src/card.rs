@@ -248,7 +248,7 @@ impl CardConfig {
         ret
     }
 
-    pub(crate) fn (&self, private_cards: &[Vec<(Card, Card)>; 2]) -> IsomorphismData {
+    pub(crate) fn isomorphism(&self, private_cards: &[Vec<(Card, Card)>; 2]) -> IsomorphismData {
         // ★スートの同型性を考慮して、等価状態の表現を生成。計算量を削減する。
         // 正直、この機能は結果保存の時にだけ使えればよさそう。
         let mut suit_isomorphism = [0; 4];

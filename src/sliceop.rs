@@ -1,4 +1,9 @@
+// 配列の高速演算用のソースコード。
+// 配列ごとに四則演算をしたり、
+
 use crate::utility::*;
+// MaybeUninit: 標準ライブラリにある型で、「まだ初期化されていないメモリ領域を安全に扱う」ためのもの。
+// 値を取り出す時などは開発者が動作保証する必要があったりする。
 use std::mem::MaybeUninit;
 
 #[inline]
@@ -148,6 +153,7 @@ pub(crate) fn max_fma_slices_uninit<'a>(
 }
 
 #[inline]
+// memo: inner product -> 内積のこと。
 pub(crate) fn inner_product(src1: &[f32], src2: &[f32]) -> f32 {
     const CHUNK_SIZE: usize = 8;
 

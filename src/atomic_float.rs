@@ -1,3 +1,5 @@
+// スレッドセーフかつロックレスに浮動小数点数（f32）を扱うための構造体 AtomicF32 を提供するファイル 
+
 use std::fmt::{self, Debug, Formatter};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering::Relaxed};
 
@@ -20,7 +22,7 @@ impl AtomicF32 {
     }
 
     pub(crate) fn store(&self, v: f32) {
-        self.0.store(v.to_bits(), Relaxed);
+        self.0.store(v.to_bits(), Relaxed); // self.0 -> selfがtouple構造体なので、その1要素目にアクセスしている
     }
 }
 
