@@ -1,0 +1,53 @@
+package solver
+
+interface solver {
+  resource game-manager
+
+  new: func() -> game-manager
+
+  init: func(
+    self: game-manager,
+    oop_range: list<float32>,
+    ip_range: list<float32>,
+    board: list<u8>,
+    starting_pot: s32,
+    effective_stack: s32,
+    rake_rate: float64,
+    rake_cap: float64,
+    donk_option: bool,
+    oop_flop_bet: string,
+    oop_flop_raise: string,
+    oop_turn_bet: string,
+    oop_turn_raise: string,
+    oop_turn_donk: string,
+    oop_river_bet: string,
+    oop_river_raise: string,
+    oop_river_donk: string,
+    ip_flop_bet: string,
+    ip_flop_raise: string,
+    ip_turn_bet: string,
+    ip_turn_raise: string,
+    ip_river_bet: string,
+    ip_river_raise: string,
+    add_allin_threshold: float64,
+    force_allin_threshold: float64,
+    merging_threshold: float64,
+    added_lines: string,
+    removed_lines: string
+  ) -> option<string>
+
+  private-cards: func(self: game-manager, player: u32) -> list<u16>
+  memory-usage: func(self: game-manager, enable_compression: bool) -> u64
+  allocate-memory: func(self: game-manager, enable_compression: bool)
+  solve-step: func(self: game-manager, current_iteration: u32)
+  exploitability: func(self: game-manager) -> float32
+  finalize: func(self: game-manager)
+  apply-history: func(self: game-manager, history: list<u32>)
+  total-bet-amount: func(self: game-manager, append: list<u32>) -> list<u32>
+  current-player: func(self: game-manager) -> string
+  num-actions: func(self: game-manager) -> u32
+  actions-after: func(self: game-manager, append: list<u32>) -> string
+  possible-cards: func(self: game-manager) -> u64
+  get-results: func(self: game-manager) -> list<float64>
+  get-chance-reports: func(self: game-manager, append: list<u32>, num_actions: u32) -> list<float64>
+}

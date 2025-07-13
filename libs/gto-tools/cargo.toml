@@ -1,0 +1,17 @@
+[package]
+name = "gto-tools"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+range = { path = "../range" }
+tree = { path = "../tree" }
+solver = { path = "../solver" }
+
+[package.metadata.component]
+package = "holdem-solver:gto-tools"
+target = "holdem-solver:gto-tools@0.1.0"
+world = "solver"
