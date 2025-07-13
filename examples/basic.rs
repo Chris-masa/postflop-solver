@@ -1,5 +1,11 @@
 use postflop_solver::*;
 
+// メモ
+// 基本的に、フロップの3枚と2プレイヤーのレンジ構成が決まれば、
+// それに対するアクションツリーが決まる。
+// 計算が完了したら、アクションツリーに全てのアクションが入っているので、
+// そこから任意のアクション、ノードのEVを計算できる。
+
 fn main() {
     // ranges of OOP and IP in string format
     // see the documentation of `Range` for more details about the format
@@ -67,6 +73,7 @@ fn main() {
     // solve the game
     let max_num_iterations = 1000;
     let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // 0.5% of the pot
+    // ここが計算の本体。
     let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
     println!("Exploitability: {:.2}", exploitability);
 

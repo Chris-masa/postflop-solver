@@ -1,8 +1,8 @@
 /// このコードは、solver.rs や interface.rs から呼び出され、
 // プレイヤーのレンジとフロップに応じたポストフロップ戦略の精密計算に利用される。
-// つまるところ、フォール度したプレイヤーのレンジは限られているから、
+// つまるところ、フォールドしたプレイヤーのレンジは限られているから、
 // そのレンジの出現確率を元に、対戦相手とターン/リバーの出現確率から下げなければならないという話。
-
+// AAやKKがいないことから、多少の確率は下がるだろうが、今回はこのような誤差は無視する方針なのでこのプログラムが使わない
 use crate::atomic_float::*;
 use crate::card::*;
 use crate::range::*;
@@ -126,11 +126,11 @@ const COMB_TABLE: [[usize; 49]; 8] = [
 #[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 pub struct BunchingData {
     // input
-    fold_ranges: Vec<Range>,        // フォールドレンジのリスト
-    flop: [Card; 3],                // フロップのカード3枚
+    fold_ranges: Vec<Range>, // フォールドレンジのリスト
+    flop: [Card; 3],         // フロップのカード3枚
 
     // current status
-    phase: u8,                      // 処理ステート（0:未処理, 1〜3）
+    phase: u8, // 処理ステート（0:未処理, 1〜3）
     progress_percent: u8,
 
     // combination table (computed in phase 1)

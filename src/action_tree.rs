@@ -6,7 +6,7 @@ use crate::mutex_like::*;
 use bincode::{
     Decode,
     Encode,
-    BorrowDecode,
+    // BorrowDecode,
     de::Decoder,
     error::DecodeError,
     error::EncodeError,

@@ -11,6 +11,7 @@ use std::mem::MaybeUninit;
 use crate::alloc::*;
 
 struct DiscountParams {
+    // DSFRにおける、古いノードの重みを減少させるためのパラメータ。
     alpha_t: f32,
     beta_t: f32,
     gamma_t: f32,
@@ -85,6 +86,7 @@ pub fn solve<T: Game>(
             );
         }
 
+        // 10回に1回、もしくは最後のイテレーションで、exploitabilityを計算する。
         if (t + 1) % 10 == 0 || t + 1 == max_num_iterations {
             exploitability = compute_exploitability(game);
         }
@@ -135,6 +137,8 @@ pub fn solve_step<T: Game>(game: &T, current_iteration: u32) {
 }
 
 /// Recursively solves the counterfactual values.
+/// Todo: この関数について理解する必要がある。
+/// 特に、result, game, node の中身とその扱われ方について。
 fn solve_recursive<T: Game>(
     result: &mut [MaybeUninit<f32>],
     game: &T,
