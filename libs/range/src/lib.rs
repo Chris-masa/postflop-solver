@@ -1,12 +1,16 @@
-#[allow(warnings)]
-mod bindings;
-
-use bindings::Guest;
 use postflop_solver::*;
 use std::cmp::Ordering;
 
 pub struct RangeManager {
     range: Range,
+}
+
+use bindings::Guest;
+struct Component;
+impl Guest for Component {
+    fn hello_world() -> String {
+        "Hello, World!".to_string()
+    }
 }
 
 #[component]
@@ -67,3 +71,5 @@ impl RangeManager {
         self.range.raw_data().into()
     }
 }
+
+bindings:: export!( Component with_ types_ in bindings);

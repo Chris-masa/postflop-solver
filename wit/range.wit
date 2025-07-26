@@ -1,6 +1,6 @@
-package solver:range
+package holdem-solver:range
 
-interface range {
+interface GuestRangeManager {
   /// Range を構築して初期化します。
   resource range
 
@@ -24,4 +24,9 @@ interface range {
 
   /// 内部の 169 長の生データを取得します。
   raw-data: func(self: range) -> list<float32>
+}
+
+
+world range {
+  export  GuestRangeManager;
 }

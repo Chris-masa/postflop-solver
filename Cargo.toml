@@ -6,30 +6,33 @@ edition = "2021"
 description = "An open-source postflop solver for Texas hold'em poker"
 documentation = "https://b-inary.github.io/postflop_solver/postflop_solver/"
 repository = "https://github.com/b-inary/postflop-solver"
-license = "AGPL-3.0-or-later"
+
+# [target.'cfg(not(target_arch = "wasm32-wasip2"))'.dependencies]
+# zstd = "0.12"  # 必要であれば safe/safe+zstd-sys なども記述
 
 [dependencies]
 bincode = { version = "2.0.0-rc.3", optional = true }
+# bindgen = "0.72.0"
+wit-bindgen-rt = { version = "0.42.1", features = ["bitflags"] }
+chrono = "0.4.41"
 once_cell = "1.18.0"
-rayon = { version = "1.8.0", optional = true }
+rayon = { version = "1.10.0", optional = true }
 regex = "1.9.6"
-zstd = { version = "0.12.4", optional = true, default-features = false }
+# clang = "2.0.0"
+# zstd = { version = "0.13.0", optional = true, default-features = false }
+anyhow = "1.0.98"
+# wasmtime = "34.0.2"
 
 [features]
-default = ["bincode", "rayon"]
+# default = ["bincode" , "rayon"]
 custom-alloc = []
-rayon = ["dep:rayon", "zstd?/zstdmt"]
+# rayon = ["dep:rayon", "zstd?/zstdmt"]
 
 [lib]
-path = "src/lib.rs"
+path = "src/wasm_lib.rs"
 
-[workspace]
-members = [
-  "libs/range",
-  "libs/tree",
-  "libs/solver",
-  "libs/gto-tools"
-]
+[package.metadata.component]
+package = "holdem-solver:host"
 
-[workspace.dependencies]
-postflop-solver = { path = "." }
+[package.metadata.component.target]
+path = "wit/host.wit"

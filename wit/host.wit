@@ -1,0 +1,9 @@
+package holdem-solver:host;
+
+interface my-host {
+  get-date: func() -> string;
+}
+
+world host {
+  export my-host;
+}

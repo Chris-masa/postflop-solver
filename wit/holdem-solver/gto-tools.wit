@@ -1,7 +1,0 @@
-holdem-solver:solver-tools
-
-world solver {
-  import range: interface "holdem-solver:range"
-  import tree: interface "holdem-solver:tree"
-  export solver: interface "holdem-solver:solver"
-}

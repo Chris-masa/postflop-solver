@@ -1,0 +1,62 @@
+package holdem-solver:tree
+
+interface GuestTreeManager {
+  resource tree-manager
+
+  /// ツリーマネージャ初期化
+  new: func(
+    board_len: s32,
+    starting_pot: s32,
+    effective_stack: s32,
+    donk_option: bool,
+    oop_flop_bet: string,
+    oop_flop_raise: string,
+    oop_turn_bet: string,
+    oop_turn_raise: string,
+    oop_turn_donk: string,
+    oop_river_bet: string,
+    oop_river_raise: string,
+    oop_river_donk: string,
+    ip_flop_bet: string,
+    ip_flop_raise: string,
+    ip_turn_bet: string,
+    ip_turn_raise: string,
+    ip_river_bet: string,
+    ip_river_raise: string,
+    add_allin_threshold: float64,
+    force_allin_threshold: float64,
+    merging_threshold: float64,
+    added_lines: string,
+    removed_lines: string
+  ) -> tree-manager;
+
+  is-error: func(self: tree-manager) -> bool;
+  added-lines: func(self: tree-manager) -> string;
+  removed-lines: func(self: tree-manager) -> string;
+  invalid-terminals: func(self: tree-manager) -> string;
+  actions: func(self: tree-manager) -> string;
+  is-terminal-node: func(self: tree-manager) -> bool;
+  is-chance-node: func(self: tree-manager) -> bool;
+  back-to-root: func(self: tree-manager);
+  apply-history: func(self: tree-manager, line: string);
+  play: func(self: tree-manager, action: string) -> s32;
+  total-bet-amount: func(self: tree-manager) -> list<s32>;
+  add-bet-action: func(self: tree-manager, amount: s32, is-raise: bool);
+  remove-current-node: func(self: tree-manager);
+  delete-added-line: func(self: tree-manager, line: string);
+  delete-removed-line: func(self: tree-manager, line: string);
+}
+
+// Action関連の定義
+interface ActionManager {
+  action-to-string: func(action: Action) -> string;
+  encode-action: func(action: Action) -> string;
+  encode-line: func(line: list<Action>) -> string;
+  decode-action: func(action: string) -> Action;
+}
+
+world tree {
+  export GuestTreeManager;
+  export ActionManager;
+}
+  

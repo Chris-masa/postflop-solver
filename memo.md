@@ -84,3 +84,12 @@ Web上から利用可能。
 * 条件面
   * valid_bet_sizes: list
   * villain_movement_trends（相手の特徴。ブラフ過多、過小、など。）
+
+# 20250720 実装メモ
+tomlファイルの以下の部分について。
+targetをコメントアウトしないと動作しなかった。理由は本当に謎。
+```
+[package.metadata.component]
+package = "holdem-solver:solver"
+target = "holdem-solver:solver@0.1.0"
+```
