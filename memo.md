@@ -93,3 +93,63 @@ targetをコメントアウトしないと動作しなかった。理由は本�
 package = "holdem-solver:solver"
 target = "holdem-solver:solver@0.1.0"
 ```
+
+# 20250726 実装メモ
+tomlファイルについて
+* crate-type = ["cdylib"] 
+  * 「このクレートは共有ライブラリとして出力すべきだ」という明示。Rustのデフォルトでは lib クレートは Rust専用（rlib）形式でビルドされ、.wasm は生成されない。
+* clang, wasmtimeを依存関係に追加していると、Cコンパイラを要求される模様。
+  * cargo tree で見ると、どこに書いてあるかがよくわかる。
+
+## Wasm総合メモ
+ようやくテストコードをTypescriptから実行できたので、全体像をまとめる。
+* Rust側
+  * wit-bindgen-rt を使用する
+  * コード内での記述
+    * witファイルの定義に従って読み込む。
+      * `use bindings::exports::holdem_solver::host::my_host::Guest;`
+    * Implしたコンポーネントは`bindings::export!(MyFunction with_types_in bindings);`のようにエクスポートする（WITの定義に従う）
+  * ビルドする
+    * cargo component build (-r) --target wasm32-wasip2
+    * target/wasm32-wasip2/debug(release)/ 配下にwasmファイルが作成される。
+* Typescript側
+  * Wasmファイルのままでは使えないので、Typescript用にデコードする
+    * `npm install @bytecodealliance/jco` 
+    * `npx @bytecodealliance/jco transpile <wasm file> -o <output path>`
+  * 普通のライブラリのように読みだす
+    * `import { <Interface name (CamelCase)> } from '<ts file path>'`
+    * `interfaceName.functionName()`
+
+# 20250804 メモ
+* RustからWasmを読み込もうとした
+  * 本ではうまく言っていたけれど、真似してもうまくいかない。
+    * どうやら、wasm32-unknown-unknownとwasm32-wasip2 の違いが問題ラシイ。
+    * wasip2の場合、内部で余計なパッケージをインストールしており、それがLinkerに対応していないとかなんとか
+    * wasip2が不安定と言う話も聞くし、本格的に使っていっていいのかどうか……？
+* ひとまず横に置いておいて、GTOToolの実装を薦めよう。
+  * テストは、Rustのテスト関数の時点で実施し、Wasmにビルドするのは最後にしよう。
+  * その後も、TypescriptやWasmtime、Webappからの呼び出しで行うことにしよう。
+    * （結局最後には必要になるけれど、先送りにできることもありそう）
+* clang存在しない問題が再燃。キャッシュ消せばいけるかとおもいきや、cargo clearn を実行しても効果なし。
+  * 前はなぜできたんだ……？
+
+
+# 20250818 実装メモ
+* `binfgen.export!(***)` に関して、1つのファイル（かな？）から2つ以上Exportすると、2つ目のExportが重複してエラーになるので注意
+```
+interface game-manager {
+  resource game-resource {
+    new: static func(number: u32) -> game-resource;
+    write: func(number: u32);
+    read: func() -> u32;
+    up: func() -> u32;
+    down: func() -> u32;
+  }
+}
+```
+* 上記のようなWITを作成した場合、
+  * impl game_manager::Guest for MyGame
+  * impl game_manager::GuestGameResource for MyGame
+  * の2つを実装する必要がある
+* というより、実際にbinding.rsを見ながら実装する方が100倍よい
+

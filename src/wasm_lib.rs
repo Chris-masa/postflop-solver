@@ -40,86 +40,62 @@ pub use utility::*;
 
 #[allow(warnings)]
 mod bindings;
+use bindings::exports::holdem_solver::host::game_manager;
+// use bindings::exports::holdem_solver::host::my_host;
+// use chrono::Local;
+use std::cell::Cell;
 
-use bindings::exports::holdem_solver::host::my_host::Guest;
-use std::cmp::Ordering;
+// pub struct MyFunction;
 
-// bindgen!({
-//     world:"holdem-solver",// コード生成を行うワールドの名前
-//     path: "./wit/holdem-solver", // WITファイルが存在するフォルダーへのパス
-// });
+// impl my_host::Guest for MyFunction {
+//     fn get_date() -> String {
+//         let now = Local::now();
+//         now.format("%Y-%m-%d %H:%M:%S").to_string()
+//     }
+// }
 
-use chrono::Local;
+pub struct MyGame {
+    number: Cell<u32>,
+}
 
-pub struct MyFunction;
+impl game_manager::GuestGameResource for MyGame {
+    // type GameResource = game_manager::GuestGameResource;
 
-impl Guest for MyFunction {
-    fn get_date() -> String {
-        let now = Local::now();
-        now.format("%Y-%m-%d %H:%M:%S").to_string()
+    fn new(number: u32) -> game_manager::GameResource {
+        // GameResource::new(...) はバインディング生成に含まれるスマートポインタ型
+        game_manager::GameResource::new(MyGame {
+            number: Cell::new(number),
+        })
+    }
+
+    fn write(&self, number: u32) {
+        self.number.set(number);
+    }
+
+    fn read(&self) -> u32 {
+        self.number.get()
+    }
+
+    fn up(&self) -> u32 {
+        self.number.set(self.number.get() + 1);
+        self.number.get()
+    }
+
+    fn down(&self) -> u32 {
+        if self.number.get() == 0 {
+            return 0; // Avoid underflow
+        } else if self.number.get() == 65535 {
+            return 65535; // Avoid underflow
+        }
+        self.number.set(self.number.get() - 1);
+        self.number.get()
     }
 }
 
-// pub struct RangeManager {
-//     range: Range,
-// }
+// ② interface 全体 (Guest)
+impl game_manager::Guest for MyGame {
+    type GameResource = Self;
+}
 
-// impl RangeManager for GuestRangeManager {
-//     fn new() -> Self {
-//         Self {
-//             range: Range::new(),
-//         }
-//     }
-
-//     fn clear(&mut self) {
-//         self.range.clear();
-//     }
-
-//     fn update(&mut self, row: u8, col: u8, weight: f32) {
-//         let rank1 = 13 - row;
-//         let rank2 = 13 - col;
-//         match row.cmp(&col) {
-//             Ordering::Equal => self.range.set_weight_pair(rank1, weight),
-//             Ordering::Less => self.range.set_weight_suited(rank1, rank2, weight),
-//             Ordering::Greater => self.range.set_weight_offsuit(rank1, rank2, weight),
-//         }
-//     }
-
-//     fn from_string(&mut self, s: &str) -> Option<String> {
-//         let result = Range::from_sanitized_str(s);
-//         if let Ok(unwrap) = result {
-//             self.range = unwrap;
-//             None
-//         } else {
-//             result.err()
-//         }
-//     }
-
-//     fn to_string(&self) -> String {
-//         self.range.to_string()
-//     }
-
-//     fn get_weights(&self) -> Box<[f32]> {
-//         let mut weights = vec![0.0; 13 * 13];
-
-//         for row in 0..13 {
-//             for col in 0..13 {
-//                 let rank1 = 12 - row as u8;
-//                 let rank2 = 12 - col as u8;
-//                 weights[row * 13 + col] = match row.cmp(&col) {
-//                     Ordering::Equal => self.range.get_weight_pair(rank1),
-//                     Ordering::Less => self.range.get_weight_suited(rank1, rank2),
-//                     Ordering::Greater => self.range.get_weight_offsuit(rank1, rank2),
-//                 };
-//             }
-//         }
-
-//         weights.into()
-//     }
-
-//     fn raw_data(&self) -> Box<[f32]> {
-//         self.range.raw_data().into()
-//     }
-// }
-
-bindings::export!(MyFunction with_types_in bindings);
+// bindings::export!(MyFunction with_types_in bindings);
+bindings::export!(MyGame with_types_in bindings);

@@ -7,62 +7,283 @@ pub mod exports {
     pub mod holdem_solver {
         pub mod host {
             #[allow(dead_code, async_fn_in_trait, unused_imports, clippy::all)]
-            pub mod my_host {
+            pub mod game_manager {
                 #[used]
                 #[doc(hidden)]
                 static __FORCE_SECTION_REF: fn() = super::super::super::super::__link_custom_section_describing_imports;
                 use super::super::super::super::_rt;
-                #[doc(hidden)]
-                #[allow(non_snake_case)]
-                pub unsafe fn _export_get_date_cabi<T: Guest>() -> *mut u8 {
-                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::get_date();
-                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
-                    let vec2 = (result0.into_bytes()).into_boxed_slice();
-                    let ptr2 = vec2.as_ptr().cast::<u8>();
-                    let len2 = vec2.len();
-                    ::core::mem::forget(vec2);
-                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
-                    *ptr1.add(0).cast::<*mut u8>() = ptr2.cast_mut();
-                    ptr1
+                #[derive(Debug)]
+                #[repr(transparent)]
+                pub struct GameResource {
+                    handle: _rt::Resource<GameResource>,
+                }
+                type _GameResourceRep<T> = Option<T>;
+                impl GameResource {
+                    /// Creates a new resource from the specified representation.
+                    ///
+                    /// This function will create a new resource handle by moving `val` onto
+                    /// the heap and then passing that heap pointer to the component model to
+                    /// create a handle. The owned handle is then returned as `GameResource`.
+                    pub fn new<T: GuestGameResource>(val: T) -> Self {
+                        Self::type_guard::<T>();
+                        let val: _GameResourceRep<T> = Some(val);
+                        let ptr: *mut _GameResourceRep<T> = _rt::Box::into_raw(
+                            _rt::Box::new(val),
+                        );
+                        unsafe { Self::from_handle(T::_resource_new(ptr.cast())) }
+                    }
+                    /// Gets access to the underlying `T` which represents this resource.
+                    pub fn get<T: GuestGameResource>(&self) -> &T {
+                        let ptr = unsafe { &*self.as_ptr::<T>() };
+                        ptr.as_ref().unwrap()
+                    }
+                    /// Gets mutable access to the underlying `T` which represents this
+                    /// resource.
+                    pub fn get_mut<T: GuestGameResource>(&mut self) -> &mut T {
+                        let ptr = unsafe { &mut *self.as_ptr::<T>() };
+                        ptr.as_mut().unwrap()
+                    }
+                    /// Consumes this resource and returns the underlying `T`.
+                    pub fn into_inner<T: GuestGameResource>(self) -> T {
+                        let ptr = unsafe { &mut *self.as_ptr::<T>() };
+                        ptr.take().unwrap()
+                    }
+                    #[doc(hidden)]
+                    pub unsafe fn from_handle(handle: u32) -> Self {
+                        Self {
+                            handle: unsafe { _rt::Resource::from_handle(handle) },
+                        }
+                    }
+                    #[doc(hidden)]
+                    pub fn take_handle(&self) -> u32 {
+                        _rt::Resource::take_handle(&self.handle)
+                    }
+                    #[doc(hidden)]
+                    pub fn handle(&self) -> u32 {
+                        _rt::Resource::handle(&self.handle)
+                    }
+                    #[doc(hidden)]
+                    fn type_guard<T: 'static>() {
+                        use core::any::TypeId;
+                        static mut LAST_TYPE: Option<TypeId> = None;
+                        unsafe {
+                            assert!(! cfg!(target_feature = "atomics"));
+                            let id = TypeId::of::<T>();
+                            match LAST_TYPE {
+                                Some(ty) => {
+                                    assert!(
+                                        ty == id, "cannot use two types with this resource type"
+                                    )
+                                }
+                                None => LAST_TYPE = Some(id),
+                            }
+                        }
+                    }
+                    #[doc(hidden)]
+                    pub unsafe fn dtor<T: 'static>(handle: *mut u8) {
+                        Self::type_guard::<T>();
+                        let _ = unsafe {
+                            _rt::Box::from_raw(handle as *mut _GameResourceRep<T>)
+                        };
+                    }
+                    fn as_ptr<T: GuestGameResource>(&self) -> *mut _GameResourceRep<T> {
+                        GameResource::type_guard::<T>();
+                        T::_resource_rep(self.handle()).cast()
+                    }
+                }
+                /// A borrowed version of [`GameResource`] which represents a borrowed value
+                /// with the lifetime `'a`.
+                #[derive(Debug)]
+                #[repr(transparent)]
+                pub struct GameResourceBorrow<'a> {
+                    rep: *mut u8,
+                    _marker: core::marker::PhantomData<&'a GameResource>,
+                }
+                impl<'a> GameResourceBorrow<'a> {
+                    #[doc(hidden)]
+                    pub unsafe fn lift(rep: usize) -> Self {
+                        Self {
+                            rep: rep as *mut u8,
+                            _marker: core::marker::PhantomData,
+                        }
+                    }
+                    /// Gets access to the underlying `T` in this resource.
+                    pub fn get<T: GuestGameResource>(&self) -> &T {
+                        let ptr = unsafe { &mut *self.as_ptr::<T>() };
+                        ptr.as_ref().unwrap()
+                    }
+                    fn as_ptr<T: 'static>(&self) -> *mut _GameResourceRep<T> {
+                        GameResource::type_guard::<T>();
+                        self.rep.cast()
+                    }
+                }
+                unsafe impl _rt::WasmResource for GameResource {
+                    #[inline]
+                    unsafe fn drop(_handle: u32) {
+                        #[cfg(not(target_arch = "wasm32"))]
+                        unreachable!();
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            #[link(
+                                wasm_import_module = "[export]holdem-solver:host/game-manager"
+                            )]
+                            unsafe extern "C" {
+                                #[link_name = "[resource-drop]game-resource"]
+                                fn drop(_: u32);
+                            }
+                            unsafe { drop(_handle) };
+                        }
+                    }
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
-                pub unsafe fn __post_return_get_date<T: Guest>(arg0: *mut u8) {
-                    let l0 = *arg0.add(0).cast::<*mut u8>();
-                    let l1 = *arg0
-                        .add(::core::mem::size_of::<*const u8>())
-                        .cast::<usize>();
-                    _rt::cabi_dealloc(l0, l1, 1);
+                pub unsafe fn _export_static_game_resource_new_cabi<
+                    T: GuestGameResource,
+                >(arg0: i32) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::new(arg0 as u32);
+                    (result0).take_handle() as i32
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_write_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8, arg1: i32) {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    T::write(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                        arg1 as u32,
+                    );
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_read_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::read(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    _rt::as_i32(result0)
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_up_cabi<T: GuestGameResource>(
+                    arg0: *mut u8,
+                ) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::up(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    _rt::as_i32(result0)
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_down_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::down(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    _rt::as_i32(result0)
                 }
                 pub trait Guest {
-                    fn get_date() -> _rt::String;
+                    type GameResource: GuestGameResource;
+                }
+                pub trait GuestGameResource: 'static {
+                    #[doc(hidden)]
+                    unsafe fn _resource_new(val: *mut u8) -> u32
+                    where
+                        Self: Sized,
+                    {
+                        #[cfg(not(target_arch = "wasm32"))]
+                        {
+                            let _ = val;
+                            unreachable!();
+                        }
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            #[link(
+                                wasm_import_module = "[export]holdem-solver:host/game-manager"
+                            )]
+                            unsafe extern "C" {
+                                #[link_name = "[resource-new]game-resource"]
+                                fn new(_: *mut u8) -> u32;
+                            }
+                            unsafe { new(val) }
+                        }
+                    }
+                    #[doc(hidden)]
+                    fn _resource_rep(handle: u32) -> *mut u8
+                    where
+                        Self: Sized,
+                    {
+                        #[cfg(not(target_arch = "wasm32"))]
+                        {
+                            let _ = handle;
+                            unreachable!();
+                        }
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            #[link(
+                                wasm_import_module = "[export]holdem-solver:host/game-manager"
+                            )]
+                            unsafe extern "C" {
+                                #[link_name = "[resource-rep]game-resource"]
+                                fn rep(_: u32) -> *mut u8;
+                            }
+                            unsafe { rep(handle) }
+                        }
+                    }
+                    fn new(number: u32) -> GameResource;
+                    fn write(&self, number: u32) -> ();
+                    fn read(&self) -> u32;
+                    fn up(&self) -> u32;
+                    fn down(&self) -> u32;
                 }
                 #[doc(hidden)]
-                macro_rules! __export_holdem_solver_host_my_host_cabi {
+                macro_rules! __export_holdem_solver_host_game_manager_cabi {
                     ($ty:ident with_types_in $($path_to_types:tt)*) => {
                         const _ : () = { #[unsafe (export_name =
-                        "holdem-solver:host/my-host#get-date")] unsafe extern "C" fn
-                        export_get_date() -> * mut u8 { unsafe { $($path_to_types)*::
-                        _export_get_date_cabi::<$ty > () } } #[unsafe (export_name =
-                        "cabi_post_holdem-solver:host/my-host#get-date")] unsafe extern
-                        "C" fn _post_return_get_date(arg0 : * mut u8,) { unsafe {
-                        $($path_to_types)*:: __post_return_get_date::<$ty > (arg0) } } };
+                        "holdem-solver:host/game-manager#[static]game-resource.new")]
+                        unsafe extern "C" fn export_static_game_resource_new(arg0 : i32,)
+                        -> i32 { unsafe { $($path_to_types)*::
+                        _export_static_game_resource_new_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.write")]
+                        unsafe extern "C" fn export_method_game_resource_write(arg0 : *
+                        mut u8, arg1 : i32,) { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_write_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0, arg1) } }
+                        #[unsafe (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.read")]
+                        unsafe extern "C" fn export_method_game_resource_read(arg0 : *
+                        mut u8,) -> i32 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_read_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.up")]
+                        unsafe extern "C" fn export_method_game_resource_up(arg0 : * mut
+                        u8,) -> i32 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_up_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.down")]
+                        unsafe extern "C" fn export_method_game_resource_down(arg0 : *
+                        mut u8,) -> i32 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_down_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } const _ :
+                        () = { #[doc(hidden)] #[unsafe (export_name =
+                        "holdem-solver:host/game-manager#[dtor]game-resource")]
+                        #[allow(non_snake_case)] unsafe extern "C" fn dtor(rep : * mut
+                        u8) { unsafe { $($path_to_types)*:: GameResource::dtor::< <$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (rep) } } }; };
                     };
                 }
                 #[doc(hidden)]
-                pub(crate) use __export_holdem_solver_host_my_host_cabi;
-                #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
-                #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
-                struct _RetArea(
-                    [::core::mem::MaybeUninit<
-                        u8,
-                    >; 2 * ::core::mem::size_of::<*const u8>()],
-                );
-                static mut _RET_AREA: _RetArea = _RetArea(
-                    [::core::mem::MaybeUninit::uninit(); 2
-                        * ::core::mem::size_of::<*const u8>()],
-                );
+                pub(crate) use __export_holdem_solver_host_game_manager_cabi;
             }
         }
     }
@@ -70,19 +291,144 @@ pub mod exports {
 #[rustfmt::skip]
 mod _rt {
     #![allow(dead_code, clippy::all)]
+    use core::fmt;
+    use core::marker;
+    use core::sync::atomic::{AtomicU32, Ordering::Relaxed};
+    /// A type which represents a component model resource, either imported or
+    /// exported into this component.
+    ///
+    /// This is a low-level wrapper which handles the lifetime of the resource
+    /// (namely this has a destructor). The `T` provided defines the component model
+    /// intrinsics that this wrapper uses.
+    ///
+    /// One of the chief purposes of this type is to provide `Deref` implementations
+    /// to access the underlying data when it is owned.
+    ///
+    /// This type is primarily used in generated code for exported and imported
+    /// resources.
+    #[repr(transparent)]
+    pub struct Resource<T: WasmResource> {
+        handle: AtomicU32,
+        _marker: marker::PhantomData<T>,
+    }
+    /// A trait which all wasm resources implement, namely providing the ability to
+    /// drop a resource.
+    ///
+    /// This generally is implemented by generated code, not user-facing code.
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe trait WasmResource {
+        /// Invokes the `[resource-drop]...` intrinsic.
+        unsafe fn drop(handle: u32);
+    }
+    impl<T: WasmResource> Resource<T> {
+        #[doc(hidden)]
+        pub unsafe fn from_handle(handle: u32) -> Self {
+            debug_assert!(handle != u32::MAX);
+            Self {
+                handle: AtomicU32::new(handle),
+                _marker: marker::PhantomData,
+            }
+        }
+        /// Takes ownership of the handle owned by `resource`.
+        ///
+        /// Note that this ideally would be `into_handle` taking `Resource<T>` by
+        /// ownership. The code generator does not enable that in all situations,
+        /// unfortunately, so this is provided instead.
+        ///
+        /// Also note that `take_handle` is in theory only ever called on values
+        /// owned by a generated function. For example a generated function might
+        /// take `Resource<T>` as an argument but then call `take_handle` on a
+        /// reference to that argument. In that sense the dynamic nature of
+        /// `take_handle` should only be exposed internally to generated code, not
+        /// to user code.
+        #[doc(hidden)]
+        pub fn take_handle(resource: &Resource<T>) -> u32 {
+            resource.handle.swap(u32::MAX, Relaxed)
+        }
+        #[doc(hidden)]
+        pub fn handle(resource: &Resource<T>) -> u32 {
+            resource.handle.load(Relaxed)
+        }
+    }
+    impl<T: WasmResource> fmt::Debug for Resource<T> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_struct("Resource").field("handle", &self.handle).finish()
+        }
+    }
+    impl<T: WasmResource> Drop for Resource<T> {
+        fn drop(&mut self) {
+            unsafe {
+                match self.handle.load(Relaxed) {
+                    u32::MAX => {}
+                    other => T::drop(other),
+                }
+            }
+        }
+    }
+    pub use alloc_crate::boxed::Box;
     #[cfg(target_arch = "wasm32")]
     pub fn run_ctors_once() {
         wit_bindgen_rt::run_ctors_once();
     }
-    pub unsafe fn cabi_dealloc(ptr: *mut u8, size: usize, align: usize) {
-        if size == 0 {
-            return;
-        }
-        let layout = alloc::Layout::from_size_align_unchecked(size, align);
-        alloc::dealloc(ptr, layout);
+    pub fn as_i32<T: AsI32>(t: T) -> i32 {
+        t.as_i32()
     }
-    pub use alloc_crate::string::String;
-    pub use alloc_crate::alloc;
+    pub trait AsI32 {
+        fn as_i32(self) -> i32;
+    }
+    impl<'a, T: Copy + AsI32> AsI32 for &'a T {
+        fn as_i32(self) -> i32 {
+            (*self).as_i32()
+        }
+    }
+    impl AsI32 for i32 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for u32 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for i16 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for u16 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for i8 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for u8 {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for char {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
+    impl AsI32 for usize {
+        #[inline]
+        fn as_i32(self) -> i32 {
+            self as i32
+        }
+    }
     extern crate alloc as alloc_crate;
 }
 /// Generates `#[unsafe(no_mangle)]` functions to export the specified type as
@@ -109,8 +455,9 @@ macro_rules! __export_host_impl {
     };
     ($ty:ident with_types_in $($path_to_types_root:tt)*) => {
         $($path_to_types_root)*::
-        exports::holdem_solver::host::my_host::__export_holdem_solver_host_my_host_cabi!($ty
-        with_types_in $($path_to_types_root)*:: exports::holdem_solver::host::my_host);
+        exports::holdem_solver::host::game_manager::__export_holdem_solver_host_game_manager_cabi!($ty
+        with_types_in $($path_to_types_root)*::
+        exports::holdem_solver::host::game_manager);
     };
 }
 #[doc(inline)]
@@ -121,12 +468,16 @@ pub(crate) use __export_host_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 208] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07V\x01A\x02\x01A\x02\x01\
-B\x02\x01@\0\0s\x04\0\x08get-date\x01\0\x04\0\x1aholdem-solver:host/my-host\x05\0\
-\x04\0\x17holdem-solver:host/host\x04\0\x0b\x0a\x01\0\x04host\x03\0\0\0G\x09prod\
-ucers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rust\x06\
-0.41.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 416] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xa5\x02\x01A\x02\x01\
+A\x02\x01B\x0b\x04\0\x0dgame-resource\x03\x01\x01i\0\x01@\x01\x06numbery\0\x01\x04\
+\0\x19[static]game-resource.new\x01\x02\x01h\0\x01@\x02\x04self\x03\x06numbery\x01\
+\0\x04\0\x1b[method]game-resource.write\x01\x04\x01@\x01\x04self\x03\0y\x04\0\x1a\
+[method]game-resource.read\x01\x05\x04\0\x18[method]game-resource.up\x01\x05\x04\
+\0\x1a[method]game-resource.down\x01\x05\x04\0\x1fholdem-solver:host/game-manage\
+r\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\x0a\x01\0\x04host\x03\0\0\0G\x09\
+producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rus\
+t\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

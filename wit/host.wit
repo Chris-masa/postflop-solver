@@ -1,9 +1,15 @@
 package holdem-solver:host;
 
-interface my-host {
-  get-date: func() -> string;
+interface game-manager {
+  resource game-resource {
+    new: static func(number: u32) -> game-resource;
+    write: func(number: u32);
+    read: func() -> u32;
+    up: func() -> u32;
+    down: func() -> u32;
+  }
 }
 
 world host {
-  export my-host;
+  export game-manager;
 }
