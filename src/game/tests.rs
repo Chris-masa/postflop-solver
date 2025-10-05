@@ -1,7 +1,7 @@
-use super::*;
-use crate::range::*;
-use crate::solver::*;
-use crate::utility::*;
+use super::{Action, ActionTree, BoardState, CardConfig, PostFlopGame, TreeConfig};
+use crate::range::{card_from_str, flop_from_str, Range};
+use crate::solver::solve;
+use crate::utility::{compute_average, compute_current_ev, finalize};
 use crate::BunchingData;
 
 #[test]
@@ -22,7 +22,7 @@ fn all_check_all_range() {
     let mut game = PostFlopGame::with_config(card_config, action_tree).unwrap();
 
     game.allocate_memory(false);
-    finalize(&mut game);
+    finalize(&mut game); // 演算をしているっぽい。
 
     game.cache_normalized_weights();
     let weights_oop = game.normalized_weights(0);
@@ -36,7 +36,7 @@ fn all_check_all_range() {
     assert!((ev_oop - 30.0).abs() < 1e-4);
     assert!((ev_ip - 30.0).abs() < 1e-4);
 
-    game.play(0);
+    game.play(0); // check
     game.cache_normalized_weights();
     let weights_oop = game.normalized_weights(0);
     let weights_ip = game.normalized_weights(1);
@@ -49,7 +49,7 @@ fn all_check_all_range() {
     assert!((ev_oop - 30.0).abs() < 1e-4);
     assert!((ev_ip - 30.0).abs() < 1e-4);
 
-    game.play(0);
+    game.play(0); // check
     assert!(game.is_chance_node());
     game.cache_normalized_weights();
     let weights_oop = game.normalized_weights(0);
@@ -63,7 +63,7 @@ fn all_check_all_range() {
     assert!((ev_oop - 30.0).abs() < 1e-4);
     assert!((ev_ip - 30.0).abs() < 1e-4);
 
-    game.play(usize::MAX);
+    game.play(usize::MAX); // next card
     game.cache_normalized_weights();
     let weights_oop = game.normalized_weights(0);
     let weights_ip = game.normalized_weights(1);
@@ -76,16 +76,17 @@ fn all_check_all_range() {
     assert!((ev_oop - 30.0).abs() < 1e-4);
     assert!((ev_ip - 30.0).abs() < 1e-4);
 
-    game.play(0);
-    game.play(0);
+    game.play(0); // check
+    game.play(0); // check
     assert!(game.is_chance_node());
-    game.play(usize::MAX);
-    game.play(0);
-    game.play(0);
+    game.play(usize::MAX); // next card
+    game.play(0); // check
+    game.play(0); // check
     assert!(game.is_terminal_node());
     game.cache_normalized_weights();
     let weights_oop = game.normalized_weights(0);
     let weights_ip = game.normalized_weights(1);
+    // &game.equity(x) -> ハンドごとの勝率をVecで返す。compute_averageとハンド存在比率を渡すことで、レンジ全体の勝率を計算。
     let equity_oop = compute_average(&game.equity(0), weights_oop);
     let equity_ip = compute_average(&game.equity(1), weights_ip);
     let ev_oop = compute_average(&game.expected_values(0), weights_oop);

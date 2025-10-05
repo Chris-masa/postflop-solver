@@ -12,6 +12,129 @@ pub mod exports {
                 #[doc(hidden)]
                 static __FORCE_SECTION_REF: fn() = super::super::super::super::__link_custom_section_describing_imports;
                 use super::super::super::super::_rt;
+                #[repr(u8)]
+                #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+                pub enum BoardState {
+                    Flop,
+                    Turn,
+                    River,
+                }
+                impl ::core::fmt::Debug for BoardState {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        match self {
+                            BoardState::Flop => {
+                                f.debug_tuple("BoardState::Flop").finish()
+                            }
+                            BoardState::Turn => {
+                                f.debug_tuple("BoardState::Turn").finish()
+                            }
+                            BoardState::River => {
+                                f.debug_tuple("BoardState::River").finish()
+                            }
+                        }
+                    }
+                }
+                impl BoardState {
+                    #[doc(hidden)]
+                    pub unsafe fn _lift(val: u8) -> BoardState {
+                        if !cfg!(debug_assertions) {
+                            return ::core::mem::transmute(val);
+                        }
+                        match val {
+                            0 => BoardState::Flop,
+                            1 => BoardState::Turn,
+                            2 => BoardState::River,
+                            _ => panic!("invalid enum discriminant"),
+                        }
+                    }
+                }
+                #[repr(u8)]
+                #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+                pub enum GameStatus {
+                    Chance,
+                    IpAction,
+                    OopAction,
+                    Terminal,
+                }
+                impl ::core::fmt::Debug for GameStatus {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        match self {
+                            GameStatus::Chance => {
+                                f.debug_tuple("GameStatus::Chance").finish()
+                            }
+                            GameStatus::IpAction => {
+                                f.debug_tuple("GameStatus::IpAction").finish()
+                            }
+                            GameStatus::OopAction => {
+                                f.debug_tuple("GameStatus::OopAction").finish()
+                            }
+                            GameStatus::Terminal => {
+                                f.debug_tuple("GameStatus::Terminal").finish()
+                            }
+                        }
+                    }
+                }
+                impl GameStatus {
+                    #[doc(hidden)]
+                    pub unsafe fn _lift(val: u8) -> GameStatus {
+                        if !cfg!(debug_assertions) {
+                            return ::core::mem::transmute(val);
+                        }
+                        match val {
+                            0 => GameStatus::Chance,
+                            1 => GameStatus::IpAction,
+                            2 => GameStatus::OopAction,
+                            3 => GameStatus::Terminal,
+                            _ => panic!("invalid enum discriminant"),
+                        }
+                    }
+                }
+                pub type WitCard = u32;
+                /// Rust の `Action` に対応する variant
+                #[derive(Clone, Copy)]
+                pub enum WitAction {
+                    None,
+                    Fold,
+                    Check,
+                    Call,
+                    Bet(u32),
+                    Raise(u32),
+                    AllIn(u32),
+                    Chance(WitCard),
+                }
+                impl ::core::fmt::Debug for WitAction {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        match self {
+                            WitAction::None => f.debug_tuple("WitAction::None").finish(),
+                            WitAction::Fold => f.debug_tuple("WitAction::Fold").finish(),
+                            WitAction::Check => {
+                                f.debug_tuple("WitAction::Check").finish()
+                            }
+                            WitAction::Call => f.debug_tuple("WitAction::Call").finish(),
+                            WitAction::Bet(e) => {
+                                f.debug_tuple("WitAction::Bet").field(e).finish()
+                            }
+                            WitAction::Raise(e) => {
+                                f.debug_tuple("WitAction::Raise").field(e).finish()
+                            }
+                            WitAction::AllIn(e) => {
+                                f.debug_tuple("WitAction::AllIn").field(e).finish()
+                            }
+                            WitAction::Chance(e) => {
+                                f.debug_tuple("WitAction::Chance").field(e).finish()
+                            }
+                        }
+                    }
+                }
                 #[derive(Debug)]
                 #[repr(transparent)]
                 pub struct GameResource {
@@ -139,54 +262,498 @@ pub mod exports {
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_static_game_resource_new_cabi<
                     T: GuestGameResource,
-                >(arg0: i32) -> i32 {
+                >() -> i32 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::new(arg0 as u32);
+                    let result0 = T::new();
                     (result0).take_handle() as i32
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
-                pub unsafe fn _export_method_game_resource_write_cabi<
+                pub unsafe fn _export_method_game_resource_check_action_cabi<
                     T: GuestGameResource,
-                >(arg0: *mut u8, arg1: i32) {
+                >(arg0: *mut u8) -> *mut u8 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    T::write(
+                    let result0 = T::check_action(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    match result0 {
+                        Ok(e) => {
+                            *ptr1.add(0).cast::<u8>() = (0i32) as u8;
+                            *ptr1
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<u8>() = (match e {
+                                true => 1,
+                                false => 0,
+                            }) as u8;
+                        }
+                        Err(e) => {
+                            *ptr1.add(0).cast::<u8>() = (1i32) as u8;
+                            let vec2 = (e.into_bytes()).into_boxed_slice();
+                            let ptr2 = vec2.as_ptr().cast::<u8>();
+                            let len2 = vec2.len();
+                            ::core::mem::forget(vec2);
+                            *ptr1
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len2;
+                            *ptr1
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<*mut u8>() = ptr2.cast_mut();
+                        }
+                    };
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_check_action<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = i32::from(*arg0.add(0).cast::<u8>());
+                    match l0 {
+                        0 => {}
+                        _ => {
+                            let l1 = *arg0
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<*mut u8>();
+                            let l2 = *arg0
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            _rt::cabi_dealloc(l1, l2, 1);
+                        }
+                    }
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_card_deal_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8, arg1: *mut u8, arg2: usize) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg2;
+                    let bytes0 = _rt::Vec::from_raw_parts(arg1.cast(), len0, len0);
+                    let result1 = T::card_deal(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                        _rt::string_lift(bytes0),
+                    );
+                    let ptr2 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    match result1 {
+                        Ok(e) => {
+                            *ptr2.add(0).cast::<u8>() = (0i32) as u8;
+                            *ptr2
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<u8>() = (match e {
+                                true => 1,
+                                false => 0,
+                            }) as u8;
+                        }
+                        Err(e) => {
+                            *ptr2.add(0).cast::<u8>() = (1i32) as u8;
+                            let vec3 = (e.into_bytes()).into_boxed_slice();
+                            let ptr3 = vec3.as_ptr().cast::<u8>();
+                            let len3 = vec3.len();
+                            ::core::mem::forget(vec3);
+                            *ptr2
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len3;
+                            *ptr2
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<*mut u8>() = ptr3.cast_mut();
+                        }
+                    };
+                    ptr2
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_card_deal<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = i32::from(*arg0.add(0).cast::<u8>());
+                    match l0 {
+                        0 => {}
+                        _ => {
+                            let l1 = *arg0
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<*mut u8>();
+                            let l2 = *arg0
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            _rt::cabi_dealloc(l1, l2, 1);
+                        }
+                    }
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_range_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8, arg1: i32) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_range(
                         unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
                         arg1 as u32,
                     );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec2 = (result0).into_boxed_slice();
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    ::core::mem::forget(vec2);
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
+                    *ptr1.add(0).cast::<*mut u8>() = ptr2.cast_mut();
+                    ptr1
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
-                pub unsafe fn _export_method_game_resource_read_cabi<
+                pub unsafe fn __post_return_method_game_resource_get_range<
                     T: GuestGameResource,
-                >(arg0: *mut u8) -> i32 {
-                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::read(
-                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
-                    );
-                    _rt::as_i32(result0)
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base2 = l0;
+                    let len2 = l1;
+                    _rt::cabi_dealloc(base2, len2 * 4, 4);
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
-                pub unsafe fn _export_method_game_resource_up_cabi<T: GuestGameResource>(
-                    arg0: *mut u8,
-                ) -> i32 {
-                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::up(
-                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
-                    );
-                    _rt::as_i32(result0)
-                }
-                #[doc(hidden)]
-                #[allow(non_snake_case)]
-                pub unsafe fn _export_method_game_resource_down_cabi<
+                pub unsafe fn _export_method_game_resource_get_card_wights_cabi<
                     T: GuestGameResource,
-                >(arg0: *mut u8) -> i32 {
+                >(arg0: *mut u8, arg1: i32) -> *mut u8 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::down(
+                    let result0 = T::get_card_wights(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                        arg1 as u32,
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec4 = result0;
+                    let len4 = vec4.len();
+                    let layout4 = _rt::alloc::Layout::from_size_align_unchecked(
+                        vec4.len() * (3 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                    let result4 = if layout4.size() != 0 {
+                        let ptr = _rt::alloc::alloc(layout4).cast::<u8>();
+                        if ptr.is_null() {
+                            _rt::alloc::handle_alloc_error(layout4);
+                        }
+                        ptr
+                    } else {
+                        ::core::ptr::null_mut()
+                    };
+                    for (i, e) in vec4.into_iter().enumerate() {
+                        let base = result4
+                            .add(i * (3 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let (t2_0, t2_1) = e;
+                            let vec3 = (t2_0.into_bytes()).into_boxed_slice();
+                            let ptr3 = vec3.as_ptr().cast::<u8>();
+                            let len3 = vec3.len();
+                            ::core::mem::forget(vec3);
+                            *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len3;
+                            *base.add(0).cast::<*mut u8>() = ptr3.cast_mut();
+                            *base
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<f32>() = _rt::as_f32(t2_1);
+                        }
+                    }
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len4;
+                    *ptr1.add(0).cast::<*mut u8>() = result4;
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_card_wights<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base4 = l0;
+                    let len4 = l1;
+                    for i in 0..len4 {
+                        let base = base4
+                            .add(i * (3 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let l2 = *base.add(0).cast::<*mut u8>();
+                            let l3 = *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            _rt::cabi_dealloc(l2, l3, 1);
+                        }
+                    }
+                    _rt::cabi_dealloc(
+                        base4,
+                        len4 * (3 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_node_info_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_node_info(
                         unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
                     );
-                    _rt::as_i32(result0)
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec2 = (result0).into_boxed_slice();
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    ::core::mem::forget(vec2);
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
+                    *ptr1.add(0).cast::<*mut u8>() = ptr2.cast_mut();
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_node_info<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base2 = l0;
+                    let len2 = l1;
+                    _rt::cabi_dealloc(base2, len2 * 4, 4);
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_board_cards_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_board_cards(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec3 = result0;
+                    let len3 = vec3.len();
+                    let layout3 = _rt::alloc::Layout::from_size_align_unchecked(
+                        vec3.len() * (2 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                    let result3 = if layout3.size() != 0 {
+                        let ptr = _rt::alloc::alloc(layout3).cast::<u8>();
+                        if ptr.is_null() {
+                            _rt::alloc::handle_alloc_error(layout3);
+                        }
+                        ptr
+                    } else {
+                        ::core::ptr::null_mut()
+                    };
+                    for (i, e) in vec3.into_iter().enumerate() {
+                        let base = result3
+                            .add(i * (2 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let vec2 = (e.into_bytes()).into_boxed_slice();
+                            let ptr2 = vec2.as_ptr().cast::<u8>();
+                            let len2 = vec2.len();
+                            ::core::mem::forget(vec2);
+                            *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len2;
+                            *base.add(0).cast::<*mut u8>() = ptr2.cast_mut();
+                        }
+                    }
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len3;
+                    *ptr1.add(0).cast::<*mut u8>() = result3;
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_board_cards<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base4 = l0;
+                    let len4 = l1;
+                    for i in 0..len4 {
+                        let base = base4
+                            .add(i * (2 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let l2 = *base.add(0).cast::<*mut u8>();
+                            let l3 = *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            _rt::cabi_dealloc(l2, l3, 1);
+                        }
+                    }
+                    _rt::cabi_dealloc(
+                        base4,
+                        len4 * (2 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_available_action_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_available_action(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec2 = result0;
+                    let len2 = vec2.len();
+                    let layout2 = _rt::alloc::Layout::from_size_align_unchecked(
+                        vec2.len() * 8,
+                        4,
+                    );
+                    let result2 = if layout2.size() != 0 {
+                        let ptr = _rt::alloc::alloc(layout2).cast::<u8>();
+                        if ptr.is_null() {
+                            _rt::alloc::handle_alloc_error(layout2);
+                        }
+                        ptr
+                    } else {
+                        ::core::ptr::null_mut()
+                    };
+                    for (i, e) in vec2.into_iter().enumerate() {
+                        let base = result2.add(i * 8);
+                        {
+                            match e {
+                                WitAction::None => {
+                                    *base.add(0).cast::<u8>() = (0i32) as u8;
+                                }
+                                WitAction::Fold => {
+                                    *base.add(0).cast::<u8>() = (1i32) as u8;
+                                }
+                                WitAction::Check => {
+                                    *base.add(0).cast::<u8>() = (2i32) as u8;
+                                }
+                                WitAction::Call => {
+                                    *base.add(0).cast::<u8>() = (3i32) as u8;
+                                }
+                                WitAction::Bet(e) => {
+                                    *base.add(0).cast::<u8>() = (4i32) as u8;
+                                    *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                }
+                                WitAction::Raise(e) => {
+                                    *base.add(0).cast::<u8>() = (5i32) as u8;
+                                    *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                }
+                                WitAction::AllIn(e) => {
+                                    *base.add(0).cast::<u8>() = (6i32) as u8;
+                                    *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                }
+                                WitAction::Chance(e) => {
+                                    *base.add(0).cast::<u8>() = (7i32) as u8;
+                                    *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                }
+                            }
+                        }
+                    }
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
+                    *ptr1.add(0).cast::<*mut u8>() = result2;
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_available_action<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base2 = l0;
+                    let len2 = l1;
+                    _rt::cabi_dealloc(base2, len2 * 8, 4);
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_history_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_history(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec2 = (result0).into_boxed_slice();
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    ::core::mem::forget(vec2);
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
+                    *ptr1.add(0).cast::<*mut u8>() = ptr2.cast_mut();
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_history<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base2 = l0;
+                    let len2 = l1;
+                    _rt::cabi_dealloc(base2, len2 * 4, 4);
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_strategy_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_strategy(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec2 = (result0).into_boxed_slice();
+                    let ptr2 = vec2.as_ptr().cast::<u8>();
+                    let len2 = vec2.len();
+                    ::core::mem::forget(vec2);
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
+                    *ptr1.add(0).cast::<*mut u8>() = ptr2.cast_mut();
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_strategy<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base2 = l0;
+                    let len2 = l1;
+                    _rt::cabi_dealloc(base2, len2 * 4, 4);
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_apply_history_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8, arg1: *mut u8, arg2: usize) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg2;
+                    let result1 = T::apply_history(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                        _rt::Vec::from_raw_parts(arg1.cast(), len0, len0),
+                    );
+                    let ptr2 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    match result1 {
+                        Ok(e) => {
+                            *ptr2.add(0).cast::<u8>() = (0i32) as u8;
+                            *ptr2.add(1).cast::<u8>() = (match e {
+                                true => 1,
+                                false => 0,
+                            }) as u8;
+                        }
+                        Err(_) => {
+                            *ptr2.add(0).cast::<u8>() = (1i32) as u8;
+                        }
+                    };
+                    ptr2
                 }
                 pub trait Guest {
                     type GameResource: GuestGameResource;
@@ -236,46 +803,167 @@ pub mod exports {
                             unsafe { rep(handle) }
                         }
                     }
-                    fn new(number: u32) -> GameResource;
-                    fn write(&self, number: u32) -> ();
-                    fn read(&self) -> u32;
-                    fn up(&self) -> u32;
-                    fn down(&self) -> u32;
+                    fn new() -> GameResource;
+                    fn check_action(&self) -> Result<bool, _rt::String>;
+                    fn card_deal(
+                        &self,
+                        card_str: _rt::String,
+                    ) -> Result<bool, _rt::String>;
+                    fn get_range(&self, player: u32) -> _rt::Vec<f32>;
+                    fn get_card_wights(
+                        &self,
+                        player: u32,
+                    ) -> _rt::Vec<(_rt::String, f32)>;
+                    fn get_node_info(&self) -> _rt::Vec<f32>;
+                    fn get_board_cards(&self) -> _rt::Vec<_rt::String>;
+                    fn get_available_action(&self) -> _rt::Vec<WitAction>;
+                    fn get_history(&self) -> _rt::Vec<u32>;
+                    fn get_strategy(&self) -> _rt::Vec<f32>;
+                    fn apply_history(&self, history: _rt::Vec<u32>) -> Result<bool, ()>;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_holdem_solver_host_game_manager_cabi {
                     ($ty:ident with_types_in $($path_to_types:tt)*) => {
                         const _ : () = { #[unsafe (export_name =
                         "holdem-solver:host/game-manager#[static]game-resource.new")]
-                        unsafe extern "C" fn export_static_game_resource_new(arg0 : i32,)
-                        -> i32 { unsafe { $($path_to_types)*::
+                        unsafe extern "C" fn export_static_game_resource_new() -> i32 {
+                        unsafe { $($path_to_types)*::
                         _export_static_game_resource_new_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > () } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.check-action")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_check_action(arg0 : * mut u8,) -> *
+                        mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_check_action_cabi::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
-                        "holdem-solver:host/game-manager#[method]game-resource.write")]
-                        unsafe extern "C" fn export_method_game_resource_write(arg0 : *
-                        mut u8, arg1 : i32,) { unsafe { $($path_to_types)*::
-                        _export_method_game_resource_write_cabi::<<$ty as
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.check-action")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_check_action(arg0 : * mut u8,)
+                        { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_check_action::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.card-deal")]
+                        unsafe extern "C" fn export_method_game_resource_card_deal(arg0 :
+                        * mut u8, arg1 : * mut u8, arg2 : usize,) -> * mut u8 { unsafe {
+                        $($path_to_types)*::
+                        _export_method_game_resource_card_deal_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0, arg1, arg2) }
+                        } #[unsafe (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.card-deal")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_card_deal(arg0 : * mut u8,) {
+                        unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_card_deal::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-range")]
+                        unsafe extern "C" fn export_method_game_resource_get_range(arg0 :
+                        * mut u8, arg1 : i32,) -> * mut u8 { unsafe {
+                        $($path_to_types)*::
+                        _export_method_game_resource_get_range_cabi::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0, arg1) } }
                         #[unsafe (export_name =
-                        "holdem-solver:host/game-manager#[method]game-resource.read")]
-                        unsafe extern "C" fn export_method_game_resource_read(arg0 : *
-                        mut u8,) -> i32 { unsafe { $($path_to_types)*::
-                        _export_method_game_resource_read_cabi::<<$ty as
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-range")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_range(arg0 : * mut u8,) {
+                        unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_range::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
-                        "holdem-solver:host/game-manager#[method]game-resource.up")]
-                        unsafe extern "C" fn export_method_game_resource_up(arg0 : * mut
-                        u8,) -> i32 { unsafe { $($path_to_types)*::
-                        _export_method_game_resource_up_cabi::<<$ty as
+                        "holdem-solver:host/game-manager#[method]game-resource.get-card-wights")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_card_wights(arg0 : * mut u8, arg1
+                        : i32,) -> * mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_card_wights_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0, arg1) } }
+                        #[unsafe (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-card-wights")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_card_wights(arg0 : * mut
+                        u8,) { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_card_wights::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
-                        "holdem-solver:host/game-manager#[method]game-resource.down")]
-                        unsafe extern "C" fn export_method_game_resource_down(arg0 : *
-                        mut u8,) -> i32 { unsafe { $($path_to_types)*::
-                        _export_method_game_resource_down_cabi::<<$ty as
-                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } const _ :
-                        () = { #[doc(hidden)] #[unsafe (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-node-info")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_node_info(arg0 : * mut u8,) -> *
+                        mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_node_info_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-node-info")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_node_info(arg0 : * mut u8,)
+                        { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_node_info::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-board-cards")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_board_cards(arg0 : * mut u8,) ->
+                        * mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_board_cards_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-board-cards")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_board_cards(arg0 : * mut
+                        u8,) { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_board_cards::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-available-action")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_available_action(arg0 : * mut
+                        u8,) -> * mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_available_action_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-available-action")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_available_action(arg0 : *
+                        mut u8,) { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_available_action::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-history")]
+                        unsafe extern "C" fn export_method_game_resource_get_history(arg0
+                        : * mut u8,) -> * mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_history_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-history")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_history(arg0 : * mut u8,) {
+                        unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_history::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-strategy")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_strategy(arg0 : * mut u8,) -> *
+                        mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_strategy_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-strategy")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_strategy(arg0 : * mut u8,)
+                        { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_strategy::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.apply-history")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_apply_history(arg0 : * mut u8, arg1 :
+                        * mut u8, arg2 : usize,) -> * mut u8 { unsafe {
+                        $($path_to_types)*::
+                        _export_method_game_resource_apply_history_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0, arg1, arg2) }
+                        } const _ : () = { #[doc(hidden)] #[unsafe (export_name =
                         "holdem-solver:host/game-manager#[dtor]game-resource")]
                         #[allow(non_snake_case)] unsafe extern "C" fn dtor(rep : * mut
                         u8) { unsafe { $($path_to_types)*:: GameResource::dtor::< <$ty as
@@ -284,6 +972,17 @@ pub mod exports {
                 }
                 #[doc(hidden)]
                 pub(crate) use __export_holdem_solver_host_game_manager_cabi;
+                #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
+                #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
+                struct _RetArea(
+                    [::core::mem::MaybeUninit<
+                        u8,
+                    >; 3 * ::core::mem::size_of::<*const u8>()],
+                );
+                static mut _RET_AREA: _RetArea = _RetArea(
+                    [::core::mem::MaybeUninit::uninit(); 3
+                        * ::core::mem::size_of::<*const u8>()],
+                );
             }
         }
     }
@@ -370,6 +1069,40 @@ mod _rt {
     pub fn run_ctors_once() {
         wit_bindgen_rt::run_ctors_once();
     }
+    pub unsafe fn cabi_dealloc(ptr: *mut u8, size: usize, align: usize) {
+        if size == 0 {
+            return;
+        }
+        let layout = alloc::Layout::from_size_align_unchecked(size, align);
+        alloc::dealloc(ptr, layout);
+    }
+    pub use alloc_crate::string::String;
+    pub use alloc_crate::vec::Vec;
+    pub unsafe fn string_lift(bytes: Vec<u8>) -> String {
+        if cfg!(debug_assertions) {
+            String::from_utf8(bytes).unwrap()
+        } else {
+            String::from_utf8_unchecked(bytes)
+        }
+    }
+    pub fn as_f32<T: AsF32>(t: T) -> f32 {
+        t.as_f32()
+    }
+    pub trait AsF32 {
+        fn as_f32(self) -> f32;
+    }
+    impl<'a, T: Copy + AsF32> AsF32 for &'a T {
+        fn as_f32(self) -> f32 {
+            (*self).as_f32()
+        }
+    }
+    impl AsF32 for f32 {
+        #[inline]
+        fn as_f32(self) -> f32 {
+            self as f32
+        }
+    }
+    pub use alloc_crate::alloc;
     pub fn as_i32<T: AsI32>(t: T) -> i32 {
         t.as_i32()
     }
@@ -468,16 +1201,28 @@ pub(crate) use __export_host_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 416] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xa5\x02\x01A\x02\x01\
-A\x02\x01B\x0b\x04\0\x0dgame-resource\x03\x01\x01i\0\x01@\x01\x06numbery\0\x01\x04\
-\0\x19[static]game-resource.new\x01\x02\x01h\0\x01@\x02\x04self\x03\x06numbery\x01\
-\0\x04\0\x1b[method]game-resource.write\x01\x04\x01@\x01\x04self\x03\0y\x04\0\x1a\
-[method]game-resource.read\x01\x05\x04\0\x18[method]game-resource.up\x01\x05\x04\
-\0\x1a[method]game-resource.down\x01\x05\x04\0\x1fholdem-solver:host/game-manage\
-r\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\x0a\x01\0\x04host\x03\0\0\0G\x09\
-producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rus\
-t\x060.41.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1012] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xf9\x06\x01A\x02\x01\
+A\x02\x01B(\x01m\x03\x04flop\x04turn\x05river\x04\0\x0bboard-state\x03\0\0\x01m\x04\
+\x06chance\x09ip-action\x0aoop-action\x08terminal\x04\0\x0bgame-status\x03\0\x02\
+\x01y\x04\0\x08wit-card\x03\0\x04\x01q\x08\x04none\0\0\x04fold\0\0\x05check\0\0\x04\
+call\0\0\x03bet\x01y\0\x05raise\x01y\0\x06all-in\x01y\0\x06chance\x01\x05\0\x04\0\
+\x0awit-action\x03\0\x06\x04\0\x0dgame-resource\x03\x01\x01i\x08\x01@\0\0\x09\x04\
+\0\x19[static]game-resource.new\x01\x0a\x01h\x08\x01j\x01\x7f\x01s\x01@\x01\x04s\
+elf\x0b\0\x0c\x04\0\"[method]game-resource.check-action\x01\x0d\x01@\x02\x04self\
+\x0b\x08card-strs\0\x0c\x04\0\x1f[method]game-resource.card-deal\x01\x0e\x01pv\x01\
+@\x02\x04self\x0b\x06playery\0\x0f\x04\0\x1f[method]game-resource.get-range\x01\x10\
+\x01o\x02sv\x01p\x11\x01@\x02\x04self\x0b\x06playery\0\x12\x04\0%[method]game-re\
+source.get-card-wights\x01\x13\x01@\x01\x04self\x0b\0\x0f\x04\0#[method]game-res\
+ource.get-node-info\x01\x14\x01ps\x01@\x01\x04self\x0b\0\x15\x04\0%[method]game-\
+resource.get-board-cards\x01\x16\x01p\x07\x01@\x01\x04self\x0b\0\x17\x04\0*[meth\
+od]game-resource.get-available-action\x01\x18\x01py\x01@\x01\x04self\x0b\0\x19\x04\
+\0![method]game-resource.get-history\x01\x1a\x04\0\"[method]game-resource.get-st\
+rategy\x01\x14\x01j\x01\x7f\0\x01@\x02\x04self\x0b\x07history\x19\0\x1b\x04\0#[m\
+ethod]game-resource.apply-history\x01\x1c\x04\0\x1fholdem-solver:host/game-manag\
+er\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\x0a\x01\0\x04host\x03\0\0\0G\
+\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen\
+-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

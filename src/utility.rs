@@ -26,7 +26,7 @@ pub(crate) fn for_each_child<T: GameNode, OP: Fn(usize) + Sync + Send>(node: &T,
 ////  # rayonあり（並列実行）
 ////  cargo build --features rayon
 ////  # rayonなし（シングルスレッド実行）
-////  cargo build 
+////  cargo build
 #[cfg(not(feature = "rayon"))]
 #[inline]
 pub(crate) fn for_each_child<T: GameNode, OP: Fn(usize) + Sync + Send>(node: &T, op: OP) {
@@ -258,6 +258,7 @@ pub fn finalize<T: Game>(game: &mut T) {
 
     // compute the expected values and save them
     for player in 0..2 {
+        // 必要だと予測される分だけメモリを確保してそのベクターを返している。：https://moshg.github.io/rust-std-ja/std/vec/struct.Vec.html#%E5%AE%B9%E9%87%8F%E3%81%A8%E3%83%A1%E3%83%A2%E3%83%AA%E3%81%AE%E5%86%8D%E7%A2%BA%E4%BF%9D
         let mut cfvalues = Vec::with_capacity(game.num_private_hands(player));
         compute_cfvalue_recursive(
             cfvalues.spare_capacity_mut(),

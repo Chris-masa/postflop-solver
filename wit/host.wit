@@ -1,12 +1,34 @@
 package holdem-solver:host;
 
 interface game-manager {
+  enum board-state { flop, turn, river }
+  enum game-status { chance, ip-action, oop-action, terminal }
+
+  type wit-card = u32;
+  /// Rust の `Action` に対応する variant
+  variant wit-action {
+    none,
+    fold,
+    check,
+    call,
+    bet(u32),
+    raise(u32),
+    all-in(u32),
+    chance( wit-card ),
+  }
+
   resource game-resource {
-    new: static func(number: u32) -> game-resource;
-    write: func(number: u32);
-    read: func() -> u32;
-    up: func() -> u32;
-    down: func() -> u32;
+    new: static func() -> game-resource;
+    check-action: func() -> result<bool, string>;
+    card-deal: func(card-str: string) -> result<bool, string>;
+    get-range: func(player: u32) -> list<f32>;
+    get-card-wights: func(player: u32) -> list<tuple<string, f32>>;
+    get-node-info: func() -> list<f32>;
+    get-board-cards: func() -> list<string>;
+    get-available-action: func() -> list<wit-action>;
+    get-history: func() -> list<u32>;
+    get-strategy: func() -> list<f32>;
+    apply-history: func(history: list<u32>) -> result<bool>;
   }
 }
 

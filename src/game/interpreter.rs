@@ -89,7 +89,6 @@ impl PostFlopGame {
         if self.state <= State::Uninitialized {
             panic!("Game is not successfully initialized");
         }
-
         self.node().is_chance() && !self.is_terminal_node()
     }
 
@@ -271,6 +270,8 @@ impl PostFlopGame {
     /// **Time complexity:** *O*(#(OOP private hands) + #(IP private hands))
     ///
     /// [`available_actions`]: #method.available_actions
+    // つまるところ、ゲームがカードを引くステータスならカードを追加し、プレイヤーのアクション状態ならCheckやBetに対応するということか？
+    // 紛らわしいのでリファクタ対象にしたい
     pub fn play(&mut self, action: usize) {
         if self.state < State::MemoryAllocated {
             panic!("Memory is not allocated");
@@ -289,6 +290,7 @@ impl PostFlopGame {
                 panic!("Storage mode is not compatible");
             }
 
+            // usize::MAX
             let actual_card = if action == usize::MAX {
                 self.possible_cards().trailing_zeros() as Card
             } else {

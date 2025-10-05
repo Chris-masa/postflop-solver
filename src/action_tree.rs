@@ -4,13 +4,14 @@ use crate::mutex_like::*;
 
 #[cfg(feature = "bincode")]
 use bincode::{
-    Decode,
-    Encode,
     // BorrowDecode,
     de::Decoder,
+    enc::Encoder,
     error::DecodeError,
     error::EncodeError,
-    enc::Encoder};
+    Decode,
+    Encode,
+};
 
 pub(crate) const PLAYER_OOP: u8 = 0;
 pub(crate) const PLAYER_IP: u8 = 1;
@@ -20,6 +21,7 @@ pub(crate) const PLAYER_CHANCE_FLAG: u8 = 4; // chance_player = PLAYER_CHANCE_FL
 pub(crate) const PLAYER_TERMINAL_FLAG: u8 = 8;
 pub(crate) const PLAYER_FOLD_FLAG: u8 = 24;
 
+// プレイヤーアクションの中にChance（カードディール）があるので注意
 /// Available actions of the postflop game.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "bincode", derive(Decode, Encode))]
@@ -165,9 +167,7 @@ pub(crate) struct ActionTreeNode {
 // Todo: よくわからないままに修正してしまった部分。上手く動くか要確認。
 #[cfg(feature = "bincode")]
 impl Decode<()> for ActionTreeNode {
-    fn decode<D: Decoder<Context = ()>>(
-        decoder: &mut D,
-    ) -> Result<Self,DecodeError> {
+    fn decode<D: Decoder<Context = ()>>(decoder: &mut D) -> Result<Self, DecodeError> {
         Ok(Self {
             player: u8::decode(decoder)?,
             board_state: BoardState::decode(decoder)?,
@@ -180,10 +180,7 @@ impl Decode<()> for ActionTreeNode {
 
 #[cfg(feature = "bincode")]
 impl Encode for ActionTreeNode {
-    fn encode<E: Encoder>(
-        &self,
-        encoder: &mut E,
-    ) -> Result<(), EncodeError> {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
         self.player.encode(encoder)?;
         self.board_state.encode(encoder)?;
         self.amount.encode(encoder)?;
@@ -536,7 +533,7 @@ impl ActionTree {
                 (true, _) => PLAYER_TERMINAL_FLAG,
             };
 
-            node.actions.push(Action::Chance(0));
+            node.actions.push(Action::Chance(0)); // 4*0 + 0 はクラブのダイヤのこと？？　そんなことする意味なさそうだけど……
             node.children.push(MutexLike::new(ActionTreeNode {
                 player: next_player,
                 board_state: next_state,
@@ -550,6 +547,7 @@ impl ActionTree {
             );
         } else {
             self.push_actions(node, &info);
+            // カードを引くステータスでは無ければ、取りうるすべてのアクションをシミュレートする
             for (action, child) in node.actions.iter().zip(node.children.iter()) {
                 self.build_tree_recursive(
                     &mut child.lock(),

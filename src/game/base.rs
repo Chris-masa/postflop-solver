@@ -330,7 +330,13 @@ impl PostFlopGame {
         if num_bytes * self.num_storage > isize::MAX as u64
             || num_bytes * self.num_storage_chance > isize::MAX as u64
         {
-            panic!("Memory usage exceeds maximum size");
+            panic!(
+                "Memory usage exceeds maximum size: {} > {} || {} > {}",
+                num_bytes * self.num_storage,
+                isize::MAX as u64,
+                num_bytes * self.num_storage_chance,
+                isize::MAX as u64
+            );
         }
 
         self.state = State::MemoryAllocated;
@@ -527,7 +533,13 @@ impl PostFlopGame {
         if total_num_nodes > u32::MAX as u64
             || mem::size_of::<PostFlopNode>() as u64 * total_num_nodes > isize::MAX as u64
         {
-            return Err("Too many nodes".to_string());
+            return Err(format!(
+                "Too many nodes: {} > {} || {} > {}",
+                total_num_nodes,
+                u32::MAX as u64,
+                mem::size_of::<PostFlopNode>() as u64 * total_num_nodes,
+                isize::MAX as u64
+            ));
         }
 
         self.num_nodes = num_nodes;
@@ -798,6 +810,12 @@ impl PostFlopGame {
         };
 
         info.num_storage += node.num_elements as u64;
+        if (info.num_storage % 10000 == 0) {
+            println!(
+                "num_storage: {}, num_elements: {}",
+                info.num_storage, node.num_elements
+            );
+        }
         info.num_storage_ip += node.num_elements_ip as u64;
     }
 
@@ -1390,6 +1408,10 @@ impl PostFlopGame {
         // 3. re-define `num_elements` after we remove children and actions
 
         // STEP 1
+        println!(
+            "Initial strage num: {}",
+            self.num_private_hands(node.player as usize) as u64
+        );
         let mut info = BuildTreeInfo {
             num_storage: self.num_private_hands(node.player as usize) as u64,
             ..Default::default()
