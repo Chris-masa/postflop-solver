@@ -17,9 +17,37 @@ interface game-manager {
     chance( wit-card ),
   }
 
+  variant street {
+    flop,
+    turn,
+    river,
+  }
+
+  record wit-action-ratio {
+    action: wit-action,
+    ratio: f32,
+  }
+
+  record wit-action-history-detail {
+    action-ratio-list: list<wit-action-ratio>,
+    player: u32,
+    pot: u32,
+    street: street,
+  }
+
+  record strategy {
+    weight: f32,
+    action-ratio: f32,
+  }
+  record strategy-map {
+    hand: string,
+    action: wit-action,
+    strategy:strategy
+  }
+
   resource game-resource {
     new: static func() -> game-resource;
-    check-action: func() -> result<bool, string>;
+    action: func(action-num: u32) -> result<bool, string>;
     card-deal: func(card-str: string) -> result<bool, string>;
     get-range: func(player: u32) -> list<f32>;
     get-card-wights: func(player: u32) -> list<tuple<string, f32>>;
@@ -27,7 +55,8 @@ interface game-manager {
     get-board-cards: func() -> list<string>;
     get-available-action: func() -> list<wit-action>;
     get-history: func() -> list<u32>;
-    get-strategy: func() -> list<f32>;
+    get-valid-actions-history: func() -> list<wit-action-history-detail>;
+    get-strategy: func() -> list<strategy-map>;
     apply-history: func(history: list<u32>) -> result<bool>;
   }
 }

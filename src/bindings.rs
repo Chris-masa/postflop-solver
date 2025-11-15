@@ -135,6 +135,96 @@ pub mod exports {
                         }
                     }
                 }
+                #[derive(Clone, Copy)]
+                pub enum Street {
+                    Flop,
+                    Turn,
+                    River,
+                }
+                impl ::core::fmt::Debug for Street {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        match self {
+                            Street::Flop => f.debug_tuple("Street::Flop").finish(),
+                            Street::Turn => f.debug_tuple("Street::Turn").finish(),
+                            Street::River => f.debug_tuple("Street::River").finish(),
+                        }
+                    }
+                }
+                #[repr(C)]
+                #[derive(Clone, Copy)]
+                pub struct WitActionRatio {
+                    pub action: WitAction,
+                    pub ratio: f32,
+                }
+                impl ::core::fmt::Debug for WitActionRatio {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        f.debug_struct("WitActionRatio")
+                            .field("action", &self.action)
+                            .field("ratio", &self.ratio)
+                            .finish()
+                    }
+                }
+                #[derive(Clone)]
+                pub struct WitActionHistoryDetail {
+                    pub action_ratio_list: _rt::Vec<WitActionRatio>,
+                    pub player: u32,
+                    pub pot: u32,
+                    pub street: Street,
+                }
+                impl ::core::fmt::Debug for WitActionHistoryDetail {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        f.debug_struct("WitActionHistoryDetail")
+                            .field("action-ratio-list", &self.action_ratio_list)
+                            .field("player", &self.player)
+                            .field("pot", &self.pot)
+                            .field("street", &self.street)
+                            .finish()
+                    }
+                }
+                #[repr(C)]
+                #[derive(Clone, Copy)]
+                pub struct Strategy {
+                    pub weight: f32,
+                    pub action_ratio: f32,
+                }
+                impl ::core::fmt::Debug for Strategy {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        f.debug_struct("Strategy")
+                            .field("weight", &self.weight)
+                            .field("action-ratio", &self.action_ratio)
+                            .finish()
+                    }
+                }
+                #[derive(Clone)]
+                pub struct StrategyMap {
+                    pub hand: _rt::String,
+                    pub action: WitAction,
+                    pub strategy: Strategy,
+                }
+                impl ::core::fmt::Debug for StrategyMap {
+                    fn fmt(
+                        &self,
+                        f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        f.debug_struct("StrategyMap")
+                            .field("hand", &self.hand)
+                            .field("action", &self.action)
+                            .field("strategy", &self.strategy)
+                            .finish()
+                    }
+                }
                 #[derive(Debug)]
                 #[repr(transparent)]
                 pub struct GameResource {
@@ -269,12 +359,13 @@ pub mod exports {
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
-                pub unsafe fn _export_method_game_resource_check_action_cabi<
+                pub unsafe fn _export_method_game_resource_action_cabi<
                     T: GuestGameResource,
-                >(arg0: *mut u8) -> *mut u8 {
+                >(arg0: *mut u8, arg1: i32) -> *mut u8 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::check_action(
+                    let result0 = T::action(
                         unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                        arg1 as u32,
                     );
                     let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
                     match result0 {
@@ -305,7 +396,7 @@ pub mod exports {
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
-                pub unsafe fn __post_return_method_game_resource_check_action<
+                pub unsafe fn __post_return_method_game_resource_action<
                     T: GuestGameResource,
                 >(arg0: *mut u8) {
                     let l0 = i32::from(*arg0.add(0).cast::<u8>());
@@ -700,6 +791,156 @@ pub mod exports {
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_valid_actions_history_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_valid_actions_history(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    let vec5 = result0;
+                    let len5 = vec5.len();
+                    let layout5 = _rt::alloc::Layout::from_size_align_unchecked(
+                        vec5.len() * (8 + 3 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                    let result5 = if layout5.size() != 0 {
+                        let ptr = _rt::alloc::alloc(layout5).cast::<u8>();
+                        if ptr.is_null() {
+                            _rt::alloc::handle_alloc_error(layout5);
+                        }
+                        ptr
+                    } else {
+                        ::core::ptr::null_mut()
+                    };
+                    for (i, e) in vec5.into_iter().enumerate() {
+                        let base = result5
+                            .add(i * (8 + 3 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let WitActionHistoryDetail {
+                                action_ratio_list: action_ratio_list2,
+                                player: player2,
+                                pot: pot2,
+                                street: street2,
+                            } = e;
+                            let vec4 = action_ratio_list2;
+                            let len4 = vec4.len();
+                            let layout4 = _rt::alloc::Layout::from_size_align_unchecked(
+                                vec4.len() * 12,
+                                4,
+                            );
+                            let result4 = if layout4.size() != 0 {
+                                let ptr = _rt::alloc::alloc(layout4).cast::<u8>();
+                                if ptr.is_null() {
+                                    _rt::alloc::handle_alloc_error(layout4);
+                                }
+                                ptr
+                            } else {
+                                ::core::ptr::null_mut()
+                            };
+                            for (i, e) in vec4.into_iter().enumerate() {
+                                let base = result4.add(i * 12);
+                                {
+                                    let WitActionRatio { action: action3, ratio: ratio3 } = e;
+                                    match action3 {
+                                        WitAction::None => {
+                                            *base.add(0).cast::<u8>() = (0i32) as u8;
+                                        }
+                                        WitAction::Fold => {
+                                            *base.add(0).cast::<u8>() = (1i32) as u8;
+                                        }
+                                        WitAction::Check => {
+                                            *base.add(0).cast::<u8>() = (2i32) as u8;
+                                        }
+                                        WitAction::Call => {
+                                            *base.add(0).cast::<u8>() = (3i32) as u8;
+                                        }
+                                        WitAction::Bet(e) => {
+                                            *base.add(0).cast::<u8>() = (4i32) as u8;
+                                            *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                        }
+                                        WitAction::Raise(e) => {
+                                            *base.add(0).cast::<u8>() = (5i32) as u8;
+                                            *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                        }
+                                        WitAction::AllIn(e) => {
+                                            *base.add(0).cast::<u8>() = (6i32) as u8;
+                                            *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                        }
+                                        WitAction::Chance(e) => {
+                                            *base.add(0).cast::<u8>() = (7i32) as u8;
+                                            *base.add(4).cast::<i32>() = _rt::as_i32(e);
+                                        }
+                                    }
+                                    *base.add(8).cast::<f32>() = _rt::as_f32(ratio3);
+                                }
+                            }
+                            *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len4;
+                            *base.add(0).cast::<*mut u8>() = result4;
+                            *base
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<i32>() = _rt::as_i32(player2);
+                            *base
+                                .add(4 + 2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<i32>() = _rt::as_i32(pot2);
+                            match street2 {
+                                Street::Flop => {
+                                    *base
+                                        .add(8 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (0i32) as u8;
+                                }
+                                Street::Turn => {
+                                    *base
+                                        .add(8 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (1i32) as u8;
+                                }
+                                Street::River => {
+                                    *base
+                                        .add(8 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (2i32) as u8;
+                                }
+                            }
+                        }
+                    }
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len5;
+                    *ptr1.add(0).cast::<*mut u8>() = result5;
+                    ptr1
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_valid_actions_history<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = *arg0.add(0).cast::<*mut u8>();
+                    let l1 = *arg0
+                        .add(::core::mem::size_of::<*const u8>())
+                        .cast::<usize>();
+                    let base5 = l0;
+                    let len5 = l1;
+                    for i in 0..len5 {
+                        let base = base5
+                            .add(i * (8 + 3 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let l2 = *base.add(0).cast::<*mut u8>();
+                            let l3 = *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            let base4 = l2;
+                            let len4 = l3;
+                            _rt::cabi_dealloc(base4, len4 * 12, 4);
+                        }
+                    }
+                    _rt::cabi_dealloc(
+                        base5,
+                        len5 * (8 + 3 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
                 pub unsafe fn _export_method_game_resource_get_strategy_cabi<
                     T: GuestGameResource,
                 >(arg0: *mut u8) -> *mut u8 {
@@ -708,12 +949,106 @@ pub mod exports {
                         unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
                     );
                     let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
-                    let vec2 = (result0).into_boxed_slice();
-                    let ptr2 = vec2.as_ptr().cast::<u8>();
-                    let len2 = vec2.len();
-                    ::core::mem::forget(vec2);
-                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len2;
-                    *ptr1.add(0).cast::<*mut u8>() = ptr2.cast_mut();
+                    let vec5 = result0;
+                    let len5 = vec5.len();
+                    let layout5 = _rt::alloc::Layout::from_size_align_unchecked(
+                        vec5.len() * (16 + 2 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
+                    let result5 = if layout5.size() != 0 {
+                        let ptr = _rt::alloc::alloc(layout5).cast::<u8>();
+                        if ptr.is_null() {
+                            _rt::alloc::handle_alloc_error(layout5);
+                        }
+                        ptr
+                    } else {
+                        ::core::ptr::null_mut()
+                    };
+                    for (i, e) in vec5.into_iter().enumerate() {
+                        let base = result5
+                            .add(i * (16 + 2 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let StrategyMap {
+                                hand: hand2,
+                                action: action2,
+                                strategy: strategy2,
+                            } = e;
+                            let vec3 = (hand2.into_bytes()).into_boxed_slice();
+                            let ptr3 = vec3.as_ptr().cast::<u8>();
+                            let len3 = vec3.len();
+                            ::core::mem::forget(vec3);
+                            *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len3;
+                            *base.add(0).cast::<*mut u8>() = ptr3.cast_mut();
+                            match action2 {
+                                WitAction::None => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (0i32) as u8;
+                                }
+                                WitAction::Fold => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (1i32) as u8;
+                                }
+                                WitAction::Check => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (2i32) as u8;
+                                }
+                                WitAction::Call => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (3i32) as u8;
+                                }
+                                WitAction::Bet(e) => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (4i32) as u8;
+                                    *base
+                                        .add(4 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<i32>() = _rt::as_i32(e);
+                                }
+                                WitAction::Raise(e) => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (5i32) as u8;
+                                    *base
+                                        .add(4 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<i32>() = _rt::as_i32(e);
+                                }
+                                WitAction::AllIn(e) => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (6i32) as u8;
+                                    *base
+                                        .add(4 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<i32>() = _rt::as_i32(e);
+                                }
+                                WitAction::Chance(e) => {
+                                    *base
+                                        .add(2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<u8>() = (7i32) as u8;
+                                    *base
+                                        .add(4 + 2 * ::core::mem::size_of::<*const u8>())
+                                        .cast::<i32>() = _rt::as_i32(e);
+                                }
+                            }
+                            let Strategy {
+                                weight: weight4,
+                                action_ratio: action_ratio4,
+                            } = strategy2;
+                            *base
+                                .add(8 + 2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<f32>() = _rt::as_f32(weight4);
+                            *base
+                                .add(12 + 2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<f32>() = _rt::as_f32(action_ratio4);
+                        }
+                    }
+                    *ptr1.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len5;
+                    *ptr1.add(0).cast::<*mut u8>() = result5;
                     ptr1
                 }
                 #[doc(hidden)]
@@ -725,9 +1060,24 @@ pub mod exports {
                     let l1 = *arg0
                         .add(::core::mem::size_of::<*const u8>())
                         .cast::<usize>();
-                    let base2 = l0;
-                    let len2 = l1;
-                    _rt::cabi_dealloc(base2, len2 * 4, 4);
+                    let base4 = l0;
+                    let len4 = l1;
+                    for i in 0..len4 {
+                        let base = base4
+                            .add(i * (16 + 2 * ::core::mem::size_of::<*const u8>()));
+                        {
+                            let l2 = *base.add(0).cast::<*mut u8>();
+                            let l3 = *base
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            _rt::cabi_dealloc(l2, l3, 1);
+                        }
+                    }
+                    _rt::cabi_dealloc(
+                        base4,
+                        len4 * (16 + 2 * ::core::mem::size_of::<*const u8>()),
+                        ::core::mem::size_of::<*const u8>(),
+                    );
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
@@ -804,7 +1154,7 @@ pub mod exports {
                         }
                     }
                     fn new() -> GameResource;
-                    fn check_action(&self) -> Result<bool, _rt::String>;
+                    fn action(&self, action_num: u32) -> Result<bool, _rt::String>;
                     fn card_deal(
                         &self,
                         card_str: _rt::String,
@@ -818,7 +1168,10 @@ pub mod exports {
                     fn get_board_cards(&self) -> _rt::Vec<_rt::String>;
                     fn get_available_action(&self) -> _rt::Vec<WitAction>;
                     fn get_history(&self) -> _rt::Vec<u32>;
-                    fn get_strategy(&self) -> _rt::Vec<f32>;
+                    fn get_valid_actions_history(
+                        &self,
+                    ) -> _rt::Vec<WitActionHistoryDetail>;
+                    fn get_strategy(&self) -> _rt::Vec<StrategyMap>;
                     fn apply_history(&self, history: _rt::Vec<u32>) -> Result<bool, ()>;
                 }
                 #[doc(hidden)]
@@ -831,18 +1184,17 @@ pub mod exports {
                         _export_static_game_resource_new_cabi::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > () } } #[unsafe
                         (export_name =
-                        "holdem-solver:host/game-manager#[method]game-resource.check-action")]
+                        "holdem-solver:host/game-manager#[method]game-resource.action")]
+                        unsafe extern "C" fn export_method_game_resource_action(arg0 : *
+                        mut u8, arg1 : i32,) -> * mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_action_cabi::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0, arg1) } }
+                        #[unsafe (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.action")]
                         unsafe extern "C" fn
-                        export_method_game_resource_check_action(arg0 : * mut u8,) -> *
-                        mut u8 { unsafe { $($path_to_types)*::
-                        _export_method_game_resource_check_action_cabi::<<$ty as
-                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
-                        (export_name =
-                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.check-action")]
-                        unsafe extern "C" fn
-                        _post_return_method_game_resource_check_action(arg0 : * mut u8,)
-                        { unsafe { $($path_to_types)*::
-                        __post_return_method_game_resource_check_action::<<$ty as
+                        _post_return_method_game_resource_action(arg0 : * mut u8,) {
+                        unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_action::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
                         "holdem-solver:host/game-manager#[method]game-resource.card-deal")]
@@ -942,6 +1294,20 @@ pub mod exports {
                         __post_return_method_game_resource_get_history::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-valid-actions-history")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_valid_actions_history(arg0 : *
+                        mut u8,) -> * mut u8 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_valid_actions_history_cabi::<<$ty
+                        as $($path_to_types)*:: Guest >::GameResource > (arg0) } }
+                        #[unsafe (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-valid-actions-history")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_valid_actions_history(arg0
+                        : * mut u8,) { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_valid_actions_history::<<$ty
+                        as $($path_to_types)*:: Guest >::GameResource > (arg0) } }
+                        #[unsafe (export_name =
                         "holdem-solver:host/game-manager#[method]game-resource.get-strategy")]
                         unsafe extern "C" fn
                         export_method_game_resource_get_strategy(arg0 : * mut u8,) -> *
@@ -990,6 +1356,8 @@ pub mod exports {
 #[rustfmt::skip]
 mod _rt {
     #![allow(dead_code, clippy::all)]
+    pub use alloc_crate::vec::Vec;
+    pub use alloc_crate::string::String;
     use core::fmt;
     use core::marker;
     use core::sync::atomic::{AtomicU32, Ordering::Relaxed};
@@ -1076,8 +1444,6 @@ mod _rt {
         let layout = alloc::Layout::from_size_align_unchecked(size, align);
         alloc::dealloc(ptr, layout);
     }
-    pub use alloc_crate::string::String;
-    pub use alloc_crate::vec::Vec;
     pub unsafe fn string_lift(bytes: Vec<u8>) -> String {
         if cfg!(debug_assertions) {
             String::from_utf8(bytes).unwrap()
@@ -1201,28 +1567,34 @@ pub(crate) use __export_host_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1012] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xf9\x06\x01A\x02\x01\
-A\x02\x01B(\x01m\x03\x04flop\x04turn\x05river\x04\0\x0bboard-state\x03\0\0\x01m\x04\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1336] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xbd\x09\x01A\x02\x01\
+A\x02\x01B8\x01m\x03\x04flop\x04turn\x05river\x04\0\x0bboard-state\x03\0\0\x01m\x04\
 \x06chance\x09ip-action\x0aoop-action\x08terminal\x04\0\x0bgame-status\x03\0\x02\
 \x01y\x04\0\x08wit-card\x03\0\x04\x01q\x08\x04none\0\0\x04fold\0\0\x05check\0\0\x04\
 call\0\0\x03bet\x01y\0\x05raise\x01y\0\x06all-in\x01y\0\x06chance\x01\x05\0\x04\0\
-\x0awit-action\x03\0\x06\x04\0\x0dgame-resource\x03\x01\x01i\x08\x01@\0\0\x09\x04\
-\0\x19[static]game-resource.new\x01\x0a\x01h\x08\x01j\x01\x7f\x01s\x01@\x01\x04s\
-elf\x0b\0\x0c\x04\0\"[method]game-resource.check-action\x01\x0d\x01@\x02\x04self\
-\x0b\x08card-strs\0\x0c\x04\0\x1f[method]game-resource.card-deal\x01\x0e\x01pv\x01\
-@\x02\x04self\x0b\x06playery\0\x0f\x04\0\x1f[method]game-resource.get-range\x01\x10\
-\x01o\x02sv\x01p\x11\x01@\x02\x04self\x0b\x06playery\0\x12\x04\0%[method]game-re\
-source.get-card-wights\x01\x13\x01@\x01\x04self\x0b\0\x0f\x04\0#[method]game-res\
-ource.get-node-info\x01\x14\x01ps\x01@\x01\x04self\x0b\0\x15\x04\0%[method]game-\
-resource.get-board-cards\x01\x16\x01p\x07\x01@\x01\x04self\x0b\0\x17\x04\0*[meth\
-od]game-resource.get-available-action\x01\x18\x01py\x01@\x01\x04self\x0b\0\x19\x04\
-\0![method]game-resource.get-history\x01\x1a\x04\0\"[method]game-resource.get-st\
-rategy\x01\x14\x01j\x01\x7f\0\x01@\x02\x04self\x0b\x07history\x19\0\x1b\x04\0#[m\
-ethod]game-resource.apply-history\x01\x1c\x04\0\x1fholdem-solver:host/game-manag\
-er\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\x0a\x01\0\x04host\x03\0\0\0G\
-\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen\
--rust\x060.41.0";
+\x0awit-action\x03\0\x06\x01q\x03\x04flop\0\0\x04turn\0\0\x05river\0\0\x04\0\x06\
+street\x03\0\x08\x01r\x02\x06action\x07\x05ratiov\x04\0\x10wit-action-ratio\x03\0\
+\x0a\x01p\x0b\x01r\x04\x11action-ratio-list\x0c\x06playery\x03poty\x06street\x09\
+\x04\0\x19wit-action-history-detail\x03\0\x0d\x01r\x02\x06weightv\x0caction-rati\
+ov\x04\0\x08strategy\x03\0\x0f\x01r\x03\x04hands\x06action\x07\x08strategy\x10\x04\
+\0\x0cstrategy-map\x03\0\x11\x04\0\x0dgame-resource\x03\x01\x01i\x13\x01@\0\0\x14\
+\x04\0\x19[static]game-resource.new\x01\x15\x01h\x13\x01j\x01\x7f\x01s\x01@\x02\x04\
+self\x16\x0aaction-numy\0\x17\x04\0\x1c[method]game-resource.action\x01\x18\x01@\
+\x02\x04self\x16\x08card-strs\0\x17\x04\0\x1f[method]game-resource.card-deal\x01\
+\x19\x01pv\x01@\x02\x04self\x16\x06playery\0\x1a\x04\0\x1f[method]game-resource.\
+get-range\x01\x1b\x01o\x02sv\x01p\x1c\x01@\x02\x04self\x16\x06playery\0\x1d\x04\0\
+%[method]game-resource.get-card-wights\x01\x1e\x01@\x01\x04self\x16\0\x1a\x04\0#\
+[method]game-resource.get-node-info\x01\x1f\x01ps\x01@\x01\x04self\x16\0\x20\x04\
+\0%[method]game-resource.get-board-cards\x01!\x01p\x07\x01@\x01\x04self\x16\0\"\x04\
+\0*[method]game-resource.get-available-action\x01#\x01py\x01@\x01\x04self\x16\0$\
+\x04\0![method]game-resource.get-history\x01%\x01p\x0e\x01@\x01\x04self\x16\0&\x04\
+\0/[method]game-resource.get-valid-actions-history\x01'\x01p\x12\x01@\x01\x04sel\
+f\x16\0(\x04\0\"[method]game-resource.get-strategy\x01)\x01j\x01\x7f\0\x01@\x02\x04\
+self\x16\x07history$\0*\x04\0#[method]game-resource.apply-history\x01+\x04\0\x1f\
+holdem-solver:host/game-manager\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\
+\x0a\x01\0\x04host\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-compon\
+ent\x070.227.1\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

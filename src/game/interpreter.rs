@@ -1,5 +1,10 @@
+use core::panic;
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use super::*;
 use crate::interface::*;
+use crate::range::hole_to_string;
 use crate::sliceop::*;
 use crate::utility::*;
 
@@ -19,6 +24,7 @@ impl PostFlopGame {
         }
 
         self.action_history.clear();
+        self.valid_actions_history.clear();
         self.node_history.clear();
         self.is_normalized_weight_cached = false;
         self.turn = self.card_config.turn;
@@ -27,10 +33,14 @@ impl PostFlopGame {
         self.turn_swap = None;
         self.river_swap = None;
         self.total_bet_amount = [0, 0];
-
         self.weights[0].copy_from_slice(&self.initial_weights[0]);
         self.weights[1].copy_from_slice(&self.initial_weights[1]);
         self.assign_zero_weights();
+    }
+
+    pub fn add_flop_fistory_detail(&mut self) -> () {
+        let current_actions_detail = self.aggr_strategy_detail();
+        self.valid_actions_history.push(current_actions_detail);
     }
 
     /// Returns the history of the current node.
@@ -46,6 +56,16 @@ impl PostFlopGame {
         }
 
         &self.action_history
+    }
+
+    /// Returns the valid actions history of the current node.
+    ///
+    #[inline]
+    pub fn get_valid_actions_history(&self) -> Vec<ActionHistoryDetail> {
+        if self.state <= State::Uninitialized {
+            panic!("Game is not successfully initialized");
+        }
+        self.valid_actions_history.clone()
     }
 
     /// Applies the given history from the root node.
@@ -420,6 +440,9 @@ impl PostFlopGame {
             let node_index = self.node_index(&self.node().play(action));
             self.node_history.push(node_index);
         }
+
+        let current_actions_detail = self.aggr_strategy_detail();
+        self.valid_actions_history.push(current_actions_detail);
 
         self.action_history.push(action);
         self.is_normalized_weight_cached = false;
@@ -846,6 +869,134 @@ impl PostFlopGame {
         });
 
         ret
+    }
+
+    // {hand_str:{Action: {weight: n, strategy: m}}
+    pub fn strategy_with_hands(
+        &self,
+    ) -> Result<HashMap<String, HashMap<Action, (f32, f32)>>, String> {
+        if self.state < State::MemoryAllocated {
+            return Err("Memory is not allocated".to_string());
+        }
+
+        if self.is_terminal_node() {
+            return Err("Terminal node is not allowed".to_string());
+        }
+
+        if self.is_chance_node() {
+            return Err("Chance node is not allowed".to_string());
+        }
+
+        let player = self.current_player();
+        let num_hands = self.num_private_hands(player);
+        let actions = self.available_actions();
+        let num_actions = actions.len();
+
+        // Get strategy and weights
+        let strategy = self.strategy();
+        let weights = &self.weights[player];
+
+        // Get private cards for the current player
+        let private_cards = &self.private_cards[player];
+
+        let mut result = HashMap::new();
+
+        for (hand_idx, &(card1, card2)) in private_cards.iter().enumerate() {
+            // Convert hand to string
+            let hand_str = hole_to_string((card1, card2))?;
+
+            let mut action_map: HashMap<Action, (f32, f32)> = HashMap::new();
+
+            for (action_idx, action) in actions.iter().enumerate() {
+                let strategy_idx = action_idx * num_hands + hand_idx;
+                let strategy_value = strategy[strategy_idx];
+                let weight_value = weights[hand_idx];
+
+                action_map.insert(*action, (weight_value, strategy_value));
+            }
+
+            result.insert(hand_str, action_map);
+        }
+
+        Ok(result)
+    }
+
+    fn get_street(&self) -> BoardState {
+        let node = self.node();
+        let street = match (node.turn, node.river) {
+            (NOT_DEALT, _) => BoardState::Flop,
+            (_, NOT_DEALT) => BoardState::Turn,
+            _ => BoardState::River,
+        };
+        street
+    }
+
+    fn get_pot_size(&self) -> i32 {
+        let tota_bet_amount_in_this_street = self.total_bet_amount();
+        self.tree_config().starting_pot
+            + tota_bet_amount_in_this_street[0]
+            + tota_bet_amount_in_this_street[1]
+    }
+
+    pub fn aggr_strategy_detail(&self) -> ActionHistoryDetail {
+        let actions = self.available_actions();
+        let num_actions = actions.len();
+        let player = self.current_player();
+        let pot_size = self.get_pot_size();
+        if self.node().is_chance() {
+            let player = self.current_player();
+            let action_ratios = actions
+                .iter()
+                .map(|&action| (action, 0.0))
+                .collect::<HashMap<Action, f32>>();
+            let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
+                actions: action_ratios,
+                player: player,
+                street: self.get_street(),
+                pot_without_current_bet: pot_size,
+            };
+            return action_history_detail;
+        } else if self.node().is_terminal() {
+            println!("Current node is terminal");
+            return ActionHistoryDetail {
+                actions: HashMap::new(),
+                player: 255,
+                street: self.get_street(),
+                pot_without_current_bet: pot_size,
+            };
+        }
+        let num_hands = self.num_private_hands(player);
+        // 戦略データを取得
+        let strategy = self.strategy();
+        // 現在のハンドウェイトを取得
+        let weights = &self.weights[player];
+
+        let mut action_ratios = HashMap::new();
+        for action_idx in 0..num_actions {
+            let mut weighted_sum = 0.0;
+            let mut weight_sum = 0.0;
+
+            for hand_idx in 0..num_hands {
+                let prob = strategy[action_idx * num_hands + hand_idx];
+                let weight = weights[hand_idx];
+                weighted_sum += prob * weight;
+                weight_sum += weight;
+            }
+
+            let ratio = if weight_sum > 0.0 {
+                weighted_sum / weight_sum
+            } else {
+                0.0
+            };
+            action_ratios.insert(actions[action_idx], ratio);
+        }
+        let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
+            actions: action_ratios,
+            player: player,
+            street: self.get_street(),
+            pot_without_current_bet: pot_size,
+        };
+        action_history_detail
     }
 
     /// Returns the total bet amount of each player (OOP, IP).

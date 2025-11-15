@@ -3,12 +3,6 @@
 
 #![cfg_attr(feature = "custom-alloc", feature(allocator_api))]
 
-#[cfg(feature = "custom-alloc")]
-mod alloc;
-
-#[cfg(feature = "bincode")]
-mod file;
-
 mod action_tree;
 mod atomic_float;
 mod bet_size;
@@ -23,46 +17,30 @@ mod range;
 mod sliceop;
 mod solver;
 mod utility;
+mod wit_models;
 
-use anyhow::Error;
-#[cfg(feature = "bincode")]
-pub use file::*;
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use crate::{
+    game::ActionHistoryDetail,
     range::card_from_str,
     utility::{compute_average, finalize},
 };
 use action_tree::{Action, ActionTree, TreeConfig};
 use bet_size::BetSizeOptions;
-use card::{Card, CardConfig};
+use card::CardConfig;
 use game::PostFlopGame;
 use range::{flop_from_str, hole_to_string, Range};
 
 #[allow(warnings)]
 mod bindings;
-use bindings::exports::holdem_solver::host::game_manager;
+use crate::bindings::exports::holdem_solver::host::game_manager;
+use crate::wit_models::wit_conversation::*;
 // use bindings::exports::holdem_solver::host::my_host;
 // use chrono::Local;
-use std::cell::Cell;
 
 pub struct MyGame {
     game: std::cell::RefCell<PostFlopGame>,
-}
-
-impl From<Action> for game_manager::WitAction {
-    fn from(action: Action) -> Self {
-        match action {
-            Action::None => game_manager::WitAction::None,
-            Action::Fold => game_manager::WitAction::Fold,
-            Action::Check => game_manager::WitAction::Check,
-            Action::Call => game_manager::WitAction::Call,
-            Action::Bet(x) => game_manager::WitAction::Bet(x as u32),
-            Action::Raise(x) => game_manager::WitAction::Raise(x as u32),
-            Action::AllIn(x) => game_manager::WitAction::AllIn(x as u32),
-            Action::Chance(card) => game_manager::WitAction::Chance(card as u32),
-        }
-    }
 }
 
 impl game_manager::GuestGameResource for MyGame {
@@ -95,6 +73,7 @@ impl game_manager::GuestGameResource for MyGame {
         game.allocate_memory(true);
         finalize(&mut game); // 演算をしているっぽい。
         game.cache_normalized_weights();
+        game.add_flop_fistory_detail(); // フロップのHistoryは手動追加になってしまっている
         game_manager::GameResource::new(Self {
             game: std::cell::RefCell::new(game),
         })
@@ -113,12 +92,12 @@ impl game_manager::GuestGameResource for MyGame {
         }
     }
 
-    fn check_action(&self) -> Result<bool, String> {
+    fn action(&self, action_num: u32) -> Result<bool, String> {
         let mut mut_game = self.game.borrow_mut();
         if mut_game.is_chance_node() {
             Err("This action is invalid.".to_string())
         } else {
-            mut_game.play(0); // Check
+            mut_game.play(action_num as usize); // Check
             mut_game.cache_normalized_weights();
             Ok(true)
         }
@@ -188,10 +167,35 @@ impl game_manager::GuestGameResource for MyGame {
         history_usize.into_iter().map(|c| *c as u32).collect()
     }
 
-    fn get_strategy(&self) -> Vec<f32> {
+    fn get_valid_actions_history(&self) -> Vec<game_manager::WitActionHistoryDetail> {
         let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
-        let strategy = mut_game.strategy();
-        strategy
+        let valid_actions_history: Vec<ActionHistoryDetail> = mut_game.get_valid_actions_history();
+        let valid_actions_history_wit_actions: Vec<game_manager::WitActionHistoryDetail> =
+            valid_actions_history
+                .into_iter()
+                .map(|detail| game_manager::WitActionHistoryDetail::from(detail))
+                .collect();
+        valid_actions_history_wit_actions
+    }
+
+    fn get_strategy(&self) -> Vec<game_manager::StrategyMap> {
+        let mut strategy_list: Vec<game_manager::StrategyMap> = [].to_vec();
+        let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
+        let strategy_with_hands: HashMap<String, HashMap<Action, (f32, f32)>> =
+            mut_game.strategy_with_hands().unwrap();
+        for (hand, strategy) in strategy_with_hands.iter() {
+            for (action, (weight, action_ratio)) in strategy.iter() {
+                strategy_list.push(game_manager::StrategyMap {
+                    hand: hand.clone(),
+                    action: game_manager::WitAction::from(*action),
+                    strategy: game_manager::Strategy {
+                        weight: *weight,
+                        action_ratio: *action_ratio,
+                    },
+                });
+            }
+        }
+        strategy_list
     }
 
     // fn get_game_status(&self) -> String {
@@ -203,6 +207,19 @@ impl game_manager::GuestGameResource for MyGame {
 // ② interface 全体 (Guest)
 impl game_manager::Guest for MyGame {
     type GameResource = Self;
+}
+
+struct WasmUtils {}
+impl WasmUtils {
+    fn weighted_average(slice: &[f32], weights: &[f32]) -> f64 {
+        let mut sum = 0.0;
+        let mut weight_sum = 0.0;
+        for (&value, &weight) in slice.iter().zip(weights.iter()) {
+            sum += value as f64 * weight as f64;
+            weight_sum += weight as f64;
+        }
+        sum / weight_sum
+    }
 }
 
 // bindings::export!(MyFunction with_types_in bindings);

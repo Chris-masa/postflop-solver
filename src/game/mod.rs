@@ -13,6 +13,7 @@ use crate::action_tree::*;
 use crate::card::*;
 use crate::mutex_like::*;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 #[cfg(feature = "bincode")]
 use bincode::{Decode, Encode};
@@ -27,6 +28,14 @@ enum State {
     TreeBuilt = 2,
     MemoryAllocated = 3,
     Solved = 4,
+}
+
+#[derive(Clone)]
+pub struct ActionHistoryDetail {
+    pub actions: HashMap<Action, f32>, // {check: 0.15, fold: 0.85}
+    pub player: usize,
+    pub street: BoardState,
+    pub pot_without_current_bet: i32,
 }
 
 /// A struct representing a postflop game.
@@ -101,6 +110,7 @@ pub struct PostFlopGame {
 
     // result interpreter
     action_history: Vec<usize>,
+    valid_actions_history: Vec<ActionHistoryDetail>,
     node_history: Vec<usize>,
     is_normalized_weight_cached: bool,
     turn: Card,
