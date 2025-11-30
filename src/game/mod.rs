@@ -33,7 +33,7 @@ enum State {
 #[derive(Clone)]
 pub struct ActionHistoryDetail {
     pub actions: HashMap<Action, f32>, // {check: 0.15, fold: 0.85}
-    pub player: usize,
+    pub game_status: GameStatus,
     pub street: BoardState,
     pub pot_without_current_bet: i32,
 }

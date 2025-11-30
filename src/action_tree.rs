@@ -63,6 +63,17 @@ pub enum BoardState {
     River = 2,
 }
 
+// An enum representing the game status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+pub enum GameStatus {
+    Oop,
+    Ip,
+    Chance,
+    Terminal,
+    Unknown,
+}
+
 /// A struct containing the game tree configuration.
 ///
 /// # Examples

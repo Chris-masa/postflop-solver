@@ -1,4 +1,5 @@
 use super::*;
+use crate::action_tree::GameStatus;
 use crate::interface::*;
 use std::ptr;
 use std::slice;
@@ -12,6 +13,21 @@ impl GameNode for PostFlopNode {
     #[inline]
     fn is_chance(&self) -> bool {
         self.player & PLAYER_CHANCE_FLAG != 0
+    }
+
+    fn game_status(&self) -> GameStatus {
+        if self.is_chance() {
+            GameStatus::Chance
+        } else if self.is_terminal() {
+            GameStatus::Terminal
+        } else {
+            let current_player = self.player & PLAYER_MASK;
+            match current_player {
+                0 => GameStatus::Oop,
+                1 => GameStatus::Ip,
+                _ => GameStatus::Unknown,
+            }
+        }
     }
 
     #[inline]

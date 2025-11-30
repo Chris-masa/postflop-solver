@@ -53,44 +53,44 @@ pub mod exports {
                 }
                 #[repr(u8)]
                 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
-                pub enum GameStatus {
-                    Chance,
-                    IpAction,
+                pub enum WitGameStatus {
                     OopAction,
+                    IpAction,
+                    Chance,
                     Terminal,
                 }
-                impl ::core::fmt::Debug for GameStatus {
+                impl ::core::fmt::Debug for WitGameStatus {
                     fn fmt(
                         &self,
                         f: &mut ::core::fmt::Formatter<'_>,
                     ) -> ::core::fmt::Result {
                         match self {
-                            GameStatus::Chance => {
-                                f.debug_tuple("GameStatus::Chance").finish()
+                            WitGameStatus::OopAction => {
+                                f.debug_tuple("WitGameStatus::OopAction").finish()
                             }
-                            GameStatus::IpAction => {
-                                f.debug_tuple("GameStatus::IpAction").finish()
+                            WitGameStatus::IpAction => {
+                                f.debug_tuple("WitGameStatus::IpAction").finish()
                             }
-                            GameStatus::OopAction => {
-                                f.debug_tuple("GameStatus::OopAction").finish()
+                            WitGameStatus::Chance => {
+                                f.debug_tuple("WitGameStatus::Chance").finish()
                             }
-                            GameStatus::Terminal => {
-                                f.debug_tuple("GameStatus::Terminal").finish()
+                            WitGameStatus::Terminal => {
+                                f.debug_tuple("WitGameStatus::Terminal").finish()
                             }
                         }
                     }
                 }
-                impl GameStatus {
+                impl WitGameStatus {
                     #[doc(hidden)]
-                    pub unsafe fn _lift(val: u8) -> GameStatus {
+                    pub unsafe fn _lift(val: u8) -> WitGameStatus {
                         if !cfg!(debug_assertions) {
                             return ::core::mem::transmute(val);
                         }
                         match val {
-                            0 => GameStatus::Chance,
-                            1 => GameStatus::IpAction,
-                            2 => GameStatus::OopAction,
-                            3 => GameStatus::Terminal,
+                            0 => WitGameStatus::OopAction,
+                            1 => WitGameStatus::IpAction,
+                            2 => WitGameStatus::Chance,
+                            3 => WitGameStatus::Terminal,
                             _ => panic!("invalid enum discriminant"),
                         }
                     }
@@ -173,7 +173,7 @@ pub mod exports {
                 #[derive(Clone)]
                 pub struct WitActionHistoryDetail {
                     pub action_ratio_list: _rt::Vec<WitActionRatio>,
-                    pub player: u32,
+                    pub game_status: WitGameStatus,
                     pub pot: u32,
                     pub street: Street,
                 }
@@ -184,7 +184,7 @@ pub mod exports {
                     ) -> ::core::fmt::Result {
                         f.debug_struct("WitActionHistoryDetail")
                             .field("action-ratio-list", &self.action_ratio_list)
-                            .field("player", &self.player)
+                            .field("game-status", &self.game_status)
                             .field("pot", &self.pot)
                             .field("street", &self.street)
                             .finish()
@@ -352,10 +352,12 @@ pub mod exports {
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_static_game_resource_new_cabi<
                     T: GuestGameResource,
-                >() -> i32 {
+                >(arg0: *mut u8, arg1: usize) -> i32 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let result0 = T::new();
-                    (result0).take_handle() as i32
+                    let len0 = arg1;
+                    let bytes0 = _rt::Vec::from_raw_parts(arg0.cast(), len0, len0);
+                    let result1 = T::new(_rt::string_lift(bytes0));
+                    (result1).take_handle() as i32
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
@@ -760,6 +762,61 @@ pub mod exports {
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_card_index_from_str_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8, arg1: *mut u8, arg2: usize) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg2;
+                    let bytes0 = _rt::Vec::from_raw_parts(arg1.cast(), len0, len0);
+                    let result1 = T::get_card_index_from_str(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                        _rt::string_lift(bytes0),
+                    );
+                    let ptr2 = (&raw mut _RET_AREA.0).cast::<u8>();
+                    match result1 {
+                        Ok(e) => {
+                            *ptr2.add(0).cast::<u8>() = (0i32) as u8;
+                            *ptr2
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<i32>() = _rt::as_i32(e);
+                        }
+                        Err(e) => {
+                            *ptr2.add(0).cast::<u8>() = (1i32) as u8;
+                            let vec3 = (e.into_bytes()).into_boxed_slice();
+                            let ptr3 = vec3.as_ptr().cast::<u8>();
+                            let len3 = vec3.len();
+                            ::core::mem::forget(vec3);
+                            *ptr2
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<usize>() = len3;
+                            *ptr2
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<*mut u8>() = ptr3.cast_mut();
+                        }
+                    };
+                    ptr2
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_method_game_resource_get_card_index_from_str<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) {
+                    let l0 = i32::from(*arg0.add(0).cast::<u8>());
+                    match l0 {
+                        0 => {}
+                        _ => {
+                            let l1 = *arg0
+                                .add(::core::mem::size_of::<*const u8>())
+                                .cast::<*mut u8>();
+                            let l2 = *arg0
+                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                .cast::<usize>();
+                            _rt::cabi_dealloc(l1, l2, 1);
+                        }
+                    }
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
                 pub unsafe fn _export_method_game_resource_get_history_cabi<
                     T: GuestGameResource,
                 >(arg0: *mut u8) -> *mut u8 {
@@ -820,7 +877,7 @@ pub mod exports {
                         {
                             let WitActionHistoryDetail {
                                 action_ratio_list: action_ratio_list2,
-                                player: player2,
+                                game_status: game_status2,
                                 pot: pot2,
                                 street: street2,
                             } = e;
@@ -882,7 +939,7 @@ pub mod exports {
                             *base.add(0).cast::<*mut u8>() = result4;
                             *base
                                 .add(2 * ::core::mem::size_of::<*const u8>())
-                                .cast::<i32>() = _rt::as_i32(player2);
+                                .cast::<u8>() = (game_status2.clone() as i32) as u8;
                             *base
                                 .add(4 + 2 * ::core::mem::size_of::<*const u8>())
                                 .cast::<i32>() = _rt::as_i32(pot2);
@@ -1081,6 +1138,17 @@ pub mod exports {
                 }
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
+                pub unsafe fn _export_method_game_resource_get_game_status_cabi<
+                    T: GuestGameResource,
+                >(arg0: *mut u8) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::get_game_status(
+                        unsafe { GameResourceBorrow::lift(arg0 as u32 as usize) }.get(),
+                    );
+                    result0.clone() as i32
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
                 pub unsafe fn _export_method_game_resource_apply_history_cabi<
                     T: GuestGameResource,
                 >(arg0: *mut u8, arg1: *mut u8, arg2: usize) -> *mut u8 {
@@ -1153,7 +1221,7 @@ pub mod exports {
                             unsafe { rep(handle) }
                         }
                     }
-                    fn new() -> GameResource;
+                    fn new(flop_card_str: _rt::String) -> GameResource;
                     fn action(&self, action_num: u32) -> Result<bool, _rt::String>;
                     fn card_deal(
                         &self,
@@ -1167,11 +1235,16 @@ pub mod exports {
                     fn get_node_info(&self) -> _rt::Vec<f32>;
                     fn get_board_cards(&self) -> _rt::Vec<_rt::String>;
                     fn get_available_action(&self) -> _rt::Vec<WitAction>;
+                    fn get_card_index_from_str(
+                        &self,
+                        card_str: _rt::String,
+                    ) -> Result<u32, _rt::String>;
                     fn get_history(&self) -> _rt::Vec<u32>;
                     fn get_valid_actions_history(
                         &self,
                     ) -> _rt::Vec<WitActionHistoryDetail>;
                     fn get_strategy(&self) -> _rt::Vec<StrategyMap>;
+                    fn get_game_status(&self) -> WitGameStatus;
                     fn apply_history(&self, history: _rt::Vec<u32>) -> Result<bool, ()>;
                 }
                 #[doc(hidden)]
@@ -1179,11 +1252,11 @@ pub mod exports {
                     ($ty:ident with_types_in $($path_to_types:tt)*) => {
                         const _ : () = { #[unsafe (export_name =
                         "holdem-solver:host/game-manager#[static]game-resource.new")]
-                        unsafe extern "C" fn export_static_game_resource_new() -> i32 {
-                        unsafe { $($path_to_types)*::
+                        unsafe extern "C" fn export_static_game_resource_new(arg0 : * mut
+                        u8, arg1 : usize,) -> i32 { unsafe { $($path_to_types)*::
                         _export_static_game_resource_new_cabi::<<$ty as
-                        $($path_to_types)*:: Guest >::GameResource > () } } #[unsafe
-                        (export_name =
+                        $($path_to_types)*:: Guest >::GameResource > (arg0, arg1) } }
+                        #[unsafe (export_name =
                         "holdem-solver:host/game-manager#[method]game-resource.action")]
                         unsafe extern "C" fn export_method_game_resource_action(arg0 : *
                         mut u8, arg1 : i32,) -> * mut u8 { unsafe { $($path_to_types)*::
@@ -1281,6 +1354,21 @@ pub mod exports {
                         __post_return_method_game_resource_get_available_action::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-card-index-from-str")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_card_index_from_str(arg0 : * mut
+                        u8, arg1 : * mut u8, arg2 : usize,) -> * mut u8 { unsafe {
+                        $($path_to_types)*::
+                        _export_method_game_resource_get_card_index_from_str_cabi::<<$ty
+                        as $($path_to_types)*:: Guest >::GameResource > (arg0, arg1,
+                        arg2) } } #[unsafe (export_name =
+                        "cabi_post_holdem-solver:host/game-manager#[method]game-resource.get-card-index-from-str")]
+                        unsafe extern "C" fn
+                        _post_return_method_game_resource_get_card_index_from_str(arg0 :
+                        * mut u8,) { unsafe { $($path_to_types)*::
+                        __post_return_method_game_resource_get_card_index_from_str::<<$ty
+                        as $($path_to_types)*:: Guest >::GameResource > (arg0) } }
+                        #[unsafe (export_name =
                         "holdem-solver:host/game-manager#[method]game-resource.get-history")]
                         unsafe extern "C" fn export_method_game_resource_get_history(arg0
                         : * mut u8,) -> * mut u8 { unsafe { $($path_to_types)*::
@@ -1320,6 +1408,13 @@ pub mod exports {
                         _post_return_method_game_resource_get_strategy(arg0 : * mut u8,)
                         { unsafe { $($path_to_types)*::
                         __post_return_method_game_resource_get_strategy::<<$ty as
+                        $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
+                        (export_name =
+                        "holdem-solver:host/game-manager#[method]game-resource.get-game-status")]
+                        unsafe extern "C" fn
+                        export_method_game_resource_get_game_status(arg0 : * mut u8,) ->
+                        i32 { unsafe { $($path_to_types)*::
+                        _export_method_game_resource_get_game_status_cabi::<<$ty as
                         $($path_to_types)*:: Guest >::GameResource > (arg0) } } #[unsafe
                         (export_name =
                         "holdem-solver:host/game-manager#[method]game-resource.apply-history")]
@@ -1437,19 +1532,19 @@ mod _rt {
     pub fn run_ctors_once() {
         wit_bindgen_rt::run_ctors_once();
     }
-    pub unsafe fn cabi_dealloc(ptr: *mut u8, size: usize, align: usize) {
-        if size == 0 {
-            return;
-        }
-        let layout = alloc::Layout::from_size_align_unchecked(size, align);
-        alloc::dealloc(ptr, layout);
-    }
     pub unsafe fn string_lift(bytes: Vec<u8>) -> String {
         if cfg!(debug_assertions) {
             String::from_utf8(bytes).unwrap()
         } else {
             String::from_utf8_unchecked(bytes)
         }
+    }
+    pub unsafe fn cabi_dealloc(ptr: *mut u8, size: usize, align: usize) {
+        if size == 0 {
+            return;
+        }
+        let layout = alloc::Layout::from_size_align_unchecked(size, align);
+        alloc::dealloc(ptr, layout);
     }
     pub fn as_f32<T: AsF32>(t: T) -> f32 {
         t.as_f32()
@@ -1567,34 +1662,37 @@ pub(crate) use __export_host_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1336] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xbd\x09\x01A\x02\x01\
-A\x02\x01B8\x01m\x03\x04flop\x04turn\x05river\x04\0\x0bboard-state\x03\0\0\x01m\x04\
-\x06chance\x09ip-action\x0aoop-action\x08terminal\x04\0\x0bgame-status\x03\0\x02\
-\x01y\x04\0\x08wit-card\x03\0\x04\x01q\x08\x04none\0\0\x04fold\0\0\x05check\0\0\x04\
-call\0\0\x03bet\x01y\0\x05raise\x01y\0\x06all-in\x01y\0\x06chance\x01\x05\0\x04\0\
-\x0awit-action\x03\0\x06\x01q\x03\x04flop\0\0\x04turn\0\0\x05river\0\0\x04\0\x06\
-street\x03\0\x08\x01r\x02\x06action\x07\x05ratiov\x04\0\x10wit-action-ratio\x03\0\
-\x0a\x01p\x0b\x01r\x04\x11action-ratio-list\x0c\x06playery\x03poty\x06street\x09\
-\x04\0\x19wit-action-history-detail\x03\0\x0d\x01r\x02\x06weightv\x0caction-rati\
-ov\x04\0\x08strategy\x03\0\x0f\x01r\x03\x04hands\x06action\x07\x08strategy\x10\x04\
-\0\x0cstrategy-map\x03\0\x11\x04\0\x0dgame-resource\x03\x01\x01i\x13\x01@\0\0\x14\
-\x04\0\x19[static]game-resource.new\x01\x15\x01h\x13\x01j\x01\x7f\x01s\x01@\x02\x04\
-self\x16\x0aaction-numy\0\x17\x04\0\x1c[method]game-resource.action\x01\x18\x01@\
-\x02\x04self\x16\x08card-strs\0\x17\x04\0\x1f[method]game-resource.card-deal\x01\
-\x19\x01pv\x01@\x02\x04self\x16\x06playery\0\x1a\x04\0\x1f[method]game-resource.\
-get-range\x01\x1b\x01o\x02sv\x01p\x1c\x01@\x02\x04self\x16\x06playery\0\x1d\x04\0\
-%[method]game-resource.get-card-wights\x01\x1e\x01@\x01\x04self\x16\0\x1a\x04\0#\
-[method]game-resource.get-node-info\x01\x1f\x01ps\x01@\x01\x04self\x16\0\x20\x04\
-\0%[method]game-resource.get-board-cards\x01!\x01p\x07\x01@\x01\x04self\x16\0\"\x04\
-\0*[method]game-resource.get-available-action\x01#\x01py\x01@\x01\x04self\x16\0$\
-\x04\0![method]game-resource.get-history\x01%\x01p\x0e\x01@\x01\x04self\x16\0&\x04\
-\0/[method]game-resource.get-valid-actions-history\x01'\x01p\x12\x01@\x01\x04sel\
-f\x16\0(\x04\0\"[method]game-resource.get-strategy\x01)\x01j\x01\x7f\0\x01@\x02\x04\
-self\x16\x07history$\0*\x04\0#[method]game-resource.apply-history\x01+\x04\0\x1f\
-holdem-solver:host/game-manager\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\
-\x0a\x01\0\x04host\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-compon\
-ent\x070.227.1\x10wit-bindgen-rust\x060.41.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1490] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xd7\x0a\x01A\x02\x01\
+A\x02\x01B=\x01m\x03\x04flop\x04turn\x05river\x04\0\x0bboard-state\x03\0\0\x01m\x04\
+\x0aoop-action\x09ip-action\x06chance\x08terminal\x04\0\x0fwit-game-status\x03\0\
+\x02\x01y\x04\0\x08wit-card\x03\0\x04\x01q\x08\x04none\0\0\x04fold\0\0\x05check\0\
+\0\x04call\0\0\x03bet\x01y\0\x05raise\x01y\0\x06all-in\x01y\0\x06chance\x01\x05\0\
+\x04\0\x0awit-action\x03\0\x06\x01q\x03\x04flop\0\0\x04turn\0\0\x05river\0\0\x04\
+\0\x06street\x03\0\x08\x01r\x02\x06action\x07\x05ratiov\x04\0\x10wit-action-rati\
+o\x03\0\x0a\x01p\x0b\x01r\x04\x11action-ratio-list\x0c\x0bgame-status\x03\x03pot\
+y\x06street\x09\x04\0\x19wit-action-history-detail\x03\0\x0d\x01r\x02\x06weightv\
+\x0caction-ratiov\x04\0\x08strategy\x03\0\x0f\x01r\x03\x04hands\x06action\x07\x08\
+strategy\x10\x04\0\x0cstrategy-map\x03\0\x11\x04\0\x0dgame-resource\x03\x01\x01i\
+\x13\x01@\x01\x0dflop-card-strs\0\x14\x04\0\x19[static]game-resource.new\x01\x15\
+\x01h\x13\x01j\x01\x7f\x01s\x01@\x02\x04self\x16\x0aaction-numy\0\x17\x04\0\x1c[\
+method]game-resource.action\x01\x18\x01@\x02\x04self\x16\x08card-strs\0\x17\x04\0\
+\x1f[method]game-resource.card-deal\x01\x19\x01pv\x01@\x02\x04self\x16\x06player\
+y\0\x1a\x04\0\x1f[method]game-resource.get-range\x01\x1b\x01o\x02sv\x01p\x1c\x01\
+@\x02\x04self\x16\x06playery\0\x1d\x04\0%[method]game-resource.get-card-wights\x01\
+\x1e\x01@\x01\x04self\x16\0\x1a\x04\0#[method]game-resource.get-node-info\x01\x1f\
+\x01ps\x01@\x01\x04self\x16\0\x20\x04\0%[method]game-resource.get-board-cards\x01\
+!\x01p\x07\x01@\x01\x04self\x16\0\"\x04\0*[method]game-resource.get-available-ac\
+tion\x01#\x01j\x01y\x01s\x01@\x02\x04self\x16\x08card-strs\0$\x04\0-[method]game\
+-resource.get-card-index-from-str\x01%\x01py\x01@\x01\x04self\x16\0&\x04\0![meth\
+od]game-resource.get-history\x01'\x01p\x0e\x01@\x01\x04self\x16\0(\x04\0/[method\
+]game-resource.get-valid-actions-history\x01)\x01p\x12\x01@\x01\x04self\x16\0*\x04\
+\0\"[method]game-resource.get-strategy\x01+\x01@\x01\x04self\x16\0\x03\x04\0%[me\
+thod]game-resource.get-game-status\x01,\x01j\x01\x7f\0\x01@\x02\x04self\x16\x07h\
+istory&\0-\x04\0#[method]game-resource.apply-history\x01.\x04\0\x1fholdem-solver\
+:host/game-manager\x05\0\x04\0\x17holdem-solver:host/host\x04\0\x0b\x0a\x01\0\x04\
+host\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\
+\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

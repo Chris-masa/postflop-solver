@@ -1,6 +1,5 @@
 use core::panic;
 use std::collections::HashMap;
-use std::hash::Hash;
 
 use super::*;
 use crate::interface::*;
@@ -923,9 +922,13 @@ impl PostFlopGame {
 
     fn get_street(&self) -> BoardState {
         let node = self.node();
-        let street = match (node.turn, node.river) {
-            (NOT_DEALT, _) => BoardState::Flop,
-            (_, NOT_DEALT) => BoardState::Turn,
+        let is_chance = node.is_chance();
+        // チャンスノードは、次のストリートとして扱う
+        let street = match (node.turn, node.river, is_chance) {
+            (NOT_DEALT, _, false) => BoardState::Flop,
+            (NOT_DEALT, _, true) => BoardState::Turn,
+            (_, NOT_DEALT, false) => BoardState::Turn,
+            (_, NOT_DEALT, true) => BoardState::River,
             _ => BoardState::River,
         };
         street
@@ -941,17 +944,16 @@ impl PostFlopGame {
     pub fn aggr_strategy_detail(&self) -> ActionHistoryDetail {
         let actions = self.available_actions();
         let num_actions = actions.len();
-        let player = self.current_player();
+        let game_status: GameStatus = self.node().game_status();
         let pot_size = self.get_pot_size();
         if self.node().is_chance() {
-            let player = self.current_player();
             let action_ratios = actions
                 .iter()
                 .map(|&action| (action, 0.0))
                 .collect::<HashMap<Action, f32>>();
             let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
                 actions: action_ratios,
-                player: player,
+                game_status: game_status,
                 street: self.get_street(),
                 pot_without_current_bet: pot_size,
             };
@@ -960,43 +962,45 @@ impl PostFlopGame {
             println!("Current node is terminal");
             return ActionHistoryDetail {
                 actions: HashMap::new(),
-                player: 255,
+                game_status: game_status,
                 street: self.get_street(),
                 pot_without_current_bet: pot_size,
             };
-        }
-        let num_hands = self.num_private_hands(player);
-        // 戦略データを取得
-        let strategy = self.strategy();
-        // 現在のハンドウェイトを取得
-        let weights = &self.weights[player];
+        } else {
+            let player = self.current_player();
+            let num_hands = self.num_private_hands(player);
+            // 戦略データを取得
+            let strategy = self.strategy();
+            // 現在のハンドウェイトを取得
+            let weights = &self.weights[player];
 
-        let mut action_ratios = HashMap::new();
-        for action_idx in 0..num_actions {
-            let mut weighted_sum = 0.0;
-            let mut weight_sum = 0.0;
+            let mut action_ratios = HashMap::new();
+            for action_idx in 0..num_actions {
+                let mut weighted_sum = 0.0;
+                let mut weight_sum = 0.0;
 
-            for hand_idx in 0..num_hands {
-                let prob = strategy[action_idx * num_hands + hand_idx];
-                let weight = weights[hand_idx];
-                weighted_sum += prob * weight;
-                weight_sum += weight;
+                for hand_idx in 0..num_hands {
+                    let prob = strategy[action_idx * num_hands + hand_idx];
+                    let weight = weights[hand_idx];
+                    weighted_sum += prob * weight;
+                    weight_sum += weight;
+                }
+
+                let ratio = if weight_sum > 0.0 {
+                    weighted_sum / weight_sum
+                } else {
+                    0.0
+                };
+                action_ratios.insert(actions[action_idx], ratio);
             }
-
-            let ratio = if weight_sum > 0.0 {
-                weighted_sum / weight_sum
-            } else {
-                0.0
+            let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
+                actions: action_ratios,
+                game_status: game_status,
+                street: self.get_street(),
+                pot_without_current_bet: pot_size,
             };
-            action_ratios.insert(actions[action_idx], ratio);
+            action_history_detail
         }
-        let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
-            actions: action_ratios,
-            player: player,
-            street: self.get_street(),
-            pot_without_current_bet: pot_size,
-        };
-        action_history_detail
     }
 
     /// Returns the total bet amount of each player (OOP, IP).

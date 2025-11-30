@@ -19,6 +19,7 @@ mod solver;
 mod utility;
 mod wit_models;
 
+use core::panic;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::{
@@ -44,7 +45,7 @@ pub struct MyGame {
 }
 
 impl game_manager::GuestGameResource for MyGame {
-    fn new() -> game_manager::GameResource {
+    fn new(flop_card_str: String) -> game_manager::GameResource {
         println!("Initial Proccess Start Running!!");
         let betsize_option =
             // BetSizeOptions::try_from(("15%,33%,50%,75%,100%,150%,a", "2.5x,3x,3.5x,4x,a")).unwrap();
@@ -55,7 +56,7 @@ impl game_manager::GuestGameResource for MyGame {
                 Range::from_str("77+,AQo+,KJo+,A4s+,KTs+,QTs+,JTs+").unwrap(),
                 Range::from_str("22+,A2s+,K2s+,Q5s+,J7s+,T8s+,98s+").unwrap(),
             ],
-            flop: flop_from_str("Td9d6h").unwrap(),
+            flop: flop_from_str(flop_card_str.as_str()).unwrap(),
             ..Default::default()
         };
 
@@ -161,6 +162,14 @@ impl game_manager::GuestGameResource for MyGame {
         Ok(true)
     }
 
+    fn get_card_index_from_str(&self, card_str: String) -> Result<u32, String> {
+        let card_char: &str = &card_str;
+        match card_from_str(card_char) {
+            Ok(card) => Ok(card as u32),
+            Err(e) => Err(format!("Error parsing card string: {}", e)),
+        }
+    }
+
     fn get_history(&self) -> Vec<u32> {
         let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
         let history_usize: &[usize] = mut_game.history();
@@ -196,6 +205,24 @@ impl game_manager::GuestGameResource for MyGame {
             }
         }
         strategy_list
+    }
+
+    fn get_game_status(&self) -> game_manager::WitGameStatus {
+        let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
+        if mut_game.is_chance_node() {
+            return game_manager::WitGameStatus::Chance;
+        } else if mut_game.is_terminal_node() {
+            return game_manager::WitGameStatus::Terminal;
+        } else {
+            let current_player = mut_game.current_player();
+            if current_player == 0 {
+                return game_manager::WitGameStatus::OopAction;
+            } else if current_player == 1 {
+                return game_manager::WitGameStatus::IpAction;
+            } else {
+                panic!("Invalid current player");
+            }
+        }
     }
 
     // fn get_game_status(&self) -> String {

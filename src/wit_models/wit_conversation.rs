@@ -1,6 +1,6 @@
 use super::super::action_tree;
 use crate::bindings::exports::holdem_solver::host::game_manager::{
-    Street, WitAction, WitActionHistoryDetail, WitActionRatio,
+    Street, WitAction, WitActionHistoryDetail, WitActionRatio, WitGameStatus,
 };
 use crate::game::ActionHistoryDetail;
 use action_tree::Action;
@@ -79,6 +79,18 @@ impl From<(Action, f32)> for WitActionRatio {
     }
 }
 
+impl From<action_tree::GameStatus> for WitGameStatus {
+    fn from(status: action_tree::GameStatus) -> Self {
+        match status {
+            action_tree::GameStatus::Chance => WitGameStatus::Chance,
+            action_tree::GameStatus::Ip => WitGameStatus::IpAction,
+            action_tree::GameStatus::Oop => WitGameStatus::OopAction,
+            action_tree::GameStatus::Terminal => WitGameStatus::Terminal,
+            action_tree::GameStatus::Unknown => panic!("Invalid game status"),
+        }
+    }
+}
+
 impl From<ActionHistoryDetail> for WitActionHistoryDetail {
     fn from(detail: ActionHistoryDetail) -> Self {
         let mut tmp_list: Vec<WitActionRatio> = detail
@@ -91,7 +103,7 @@ impl From<ActionHistoryDetail> for WitActionHistoryDetail {
         tmp_list.sort_by(|a, b| a.action.cmp(&b.action));
         WitActionHistoryDetail {
             action_ratio_list: tmp_list,
-            player: detail.player as u32,
+            game_status: WitGameStatus::from(detail.game_status),
             pot: detail.pot_without_current_bet as u32,
             street: match detail.street {
                 action_tree::BoardState::Flop => Street::Flop,

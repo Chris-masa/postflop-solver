@@ -1,3 +1,4 @@
+use crate::action_tree::GameStatus;
 use crate::mutex_like::*;
 use std::mem::MaybeUninit;
 use std::ops::Range;
@@ -88,6 +89,10 @@ pub trait GameNode: Send + Sync {
     /// Returns whether the node is chance.
     #[doc(hidden)]
     fn is_chance(&self) -> bool;
+
+    // Returns node status.
+    #[doc(hidden)]
+    fn game_status(&self) -> GameStatus;
 
     /// Returns the current player.
     #[doc(hidden)]
