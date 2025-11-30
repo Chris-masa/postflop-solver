@@ -19,9 +19,10 @@ pub mod utility;
 
 // サブモジュール（フォルダ）
 pub mod game;
-pub mod wit_models;
 
 // === WASM / WIT 用エントリ ==============================
 // wasm32 ターゲットのときだけコンパイルする
+pub mod bindings;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm_lib;
+pub mod wit_models;

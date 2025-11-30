@@ -1,6 +1,5 @@
-use std::alloc::{self, AllocError, Allocator, Layout};
+use std::alloc::{self, Layout};
 use std::cell::RefCell;
-use std::ptr::NonNull;
 use std::slice;
 
 const ALIGNMENT: usize = 16;
@@ -113,25 +112,40 @@ impl Drop for StackAllocData {
     }
 }
 
-unsafe impl Allocator for StackAlloc {
+impl StackAlloc {
+    /// Initialize the allocator. Should be called once at startup.
     #[inline]
-    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
-        if layout.size() > STACK_UNIT || layout.align() > ALIGNMENT {
-            return Err(AllocError);
-        }
+    pub fn init() {
+        STACK_ALLOC_DATA.with(|data| {
+            let _ = data.borrow_mut();
+        });
+    }
 
+    /// Allocate memory. Panics if allocation fails or size exceeds limits.
+    #[inline]
+    pub fn allocate(size: usize) -> *mut [u8] {
+        if size > STACK_UNIT {
+            panic!("allocation size {} exceeds stack unit {}", size, STACK_UNIT);
+        }
         STACK_ALLOC_DATA.with(|data| {
             let mut data = data.borrow_mut();
-            Ok(NonNull::new(data.allocate(layout.size())).unwrap())
+            data.allocate(size)
         })
     }
 
+    /// Deallocate memory. Panics if deallocation fails or size exceeds limits.
     #[inline]
-    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+    pub fn deallocate(ptr: *mut u8, size: usize) {
+        if size > STACK_UNIT {
+            panic!(
+                "deallocation size {} exceeds stack unit {}",
+                size, STACK_UNIT
+            );
+        }
         STACK_ALLOC_DATA.with(|data| {
             let mut data = data.borrow_mut();
-            data.deallocate(ptr.as_ptr(), layout.size());
-        })
+            data.deallocate(ptr, size);
+        });
     }
 }
 
