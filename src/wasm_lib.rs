@@ -1,37 +1,17 @@
 // クレーと外部からでもモジュールを使用できるようにするためのファイル。
 // 外部からこのクレートライブラリをImportした時、使用できる機能を公開している。
 
-#![cfg_attr(feature = "custom-alloc", feature(allocator_api))]
-
-mod action_tree;
-mod atomic_float;
-mod bet_size;
-mod bunching;
-mod card;
-mod game;
-mod hand;
-mod hand_table;
-mod interface;
-mod mutex_like;
-mod range;
-mod sliceop;
-mod solver;
-mod utility;
-mod wit_models;
-
-use core::panic;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::{
-    game::ActionHistoryDetail,
-    range::card_from_str,
+    action_tree::{Action, ActionTree, TreeConfig},
+    bet_size::BetSizeOptions,
+    card::CardConfig,
+    game::{ActionHistoryDetail, PostFlopGame},
+    range::{card_from_str, flop_from_str, hole_to_string, Range},
     utility::{compute_average, finalize},
+    wit_models::wit_conversation::*,
 };
-use action_tree::{Action, ActionTree, TreeConfig};
-use bet_size::BetSizeOptions;
-use card::CardConfig;
-use game::PostFlopGame;
-use range::{flop_from_str, hole_to_string, Range};
 
 #[allow(warnings)]
 mod bindings;

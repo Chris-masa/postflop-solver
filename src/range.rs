@@ -720,7 +720,6 @@ impl Range {
         Ok(())
     }
 
-
     /// ポーカーで使われる「89s+」とか「44+」「9Ko-QKo」などを処理するための関数群
     #[inline]
     fn update_with_plus_range(&mut self, range: &str, weight: f32) -> Result<(), String> {

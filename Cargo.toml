@@ -21,12 +21,14 @@ anyhow = "1.0.98"
 
 [features]
 # default = ["bincode" , "rayon"]
+default = ["bincode"]
 custom-alloc = []
+# bincode = ["dep:bincode"]
 # rayon = ["dep:rayon", "zstd?/zstdmt"]
 
 [lib]
-crate-type = ["cdylib"] # 「このクレートは共有ライブラリとして出力すべきだ」という明示。Rustのデフォルトでは lib クレートは Rust専用（rlib）形式でビルドされ、.wasm は生成されない。
-path = "src/wasm_lib.rs"
+crate-type = ["cdylib", "rlib"] # cdylib: 「このクレートは共有ライブラリとして出力すべきだ」という明示。Rustのデフォルトでは lib クレートは Rust専用（rlib）形式でビルドされ、.wasm は生成されない。
+# path = "src/wasm_lib.rs"
 
 [package.metadata.component]
 package = "holdem-solver:host"

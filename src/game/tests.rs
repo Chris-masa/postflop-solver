@@ -1,8 +1,8 @@
 use super::{Action, ActionTree, BoardState, CardConfig, PostFlopGame, TreeConfig};
+use crate::bunching::BunchingData;
 use crate::range::{card_from_str, flop_from_str, Range};
 use crate::solver::solve;
 use crate::utility::{compute_average, compute_current_ev, finalize};
-use crate::BunchingData;
 
 #[test]
 fn all_check_all_range() {
