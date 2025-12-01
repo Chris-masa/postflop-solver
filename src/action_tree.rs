@@ -1,3 +1,6 @@
+use std::ops::Deref;
+use std::ops::DerefMut;
+
 use crate::bet_size::*;
 use crate::card::*;
 use crate::mutex_like::*;

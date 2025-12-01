@@ -889,7 +889,7 @@ impl PostFlopGame {
         let player = self.current_player();
         let num_hands = self.num_private_hands(player);
         let actions = self.available_actions();
-        let num_actions = actions.len();
+        // let num_actions = actions.len();
 
         // Get strategy and weights
         let strategy = self.strategy();

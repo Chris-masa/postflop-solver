@@ -22,7 +22,9 @@ pub mod game;
 
 // === WASM / WIT 用エントリ ==============================
 // wasm32 ターゲットのときだけコンパイルする
+#[cfg(target_arch = "wasm32")]
 pub mod bindings;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm_lib;
+#[cfg(target_arch = "wasm32")]
 pub mod wit_models;

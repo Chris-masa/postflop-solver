@@ -13,11 +13,9 @@ use crate::{
     wit_models::wit_conversation::*,
 };
 
+use crate::bindings::export;
 #[allow(warnings)]
-mod bindings;
 use crate::bindings::exports::holdem_solver::host::game_manager;
-use crate::wit_models::wit_conversation::*;
-// use bindings::exports::holdem_solver::host::my_host;
 // use chrono::Local;
 
 pub struct MyGame {
@@ -229,5 +227,5 @@ impl WasmUtils {
     }
 }
 
-// bindings::export!(MyFunction with_types_in bindings);
-bindings::export!(MyGame with_types_in bindings);
+// bindings::export!(MyGame with_types_in bindings);
+export!(MyGame with_types_in crate::bindings);
