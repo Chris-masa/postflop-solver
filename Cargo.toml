@@ -29,7 +29,7 @@ wasm-tester = ["wasmtime", "wasmtime-wasi"] # optionalな場合はここに入�
 
 [lib]
 crate-type = ["cdylib", "rlib"] # cdylib: 「このクレートは共有ライブラリとして出力すべきだ」という明示。Rustのデフォルトでは lib クレートは Rust専用（rlib）形式でビルドされ、.wasm は生成されない。
-# path = "src/wasm_lib.rs"
+path = "src/wasm_lib.rs"
 
 [package.metadata.component]
 package = "holdem-solver:host"
@@ -43,8 +43,7 @@ path = "wit/host.wit"
 wasmtime = { version = "38", features = ["component-model"], optional = true }
 wasmtime-wasi = { version = "38", optional = true}
 
-[[bin]]
-name = "wasm_tester"
-path = "src/bin/wasm_tester.rs"
-# この feature が有効なときだけコンパイルされる
-required-features = ["wasm-tester"]
+[dev-dependencies]
+anyhow = "1"
+wasmtime = { version = "38"}
+wasmtime-wasi = { version = "38"}

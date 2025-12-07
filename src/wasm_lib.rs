@@ -1,21 +1,43 @@
 // クレーと外部からでもモジュールを使用できるようにするためのファイル。
 // 外部からこのクレートライブラリをImportした時、使用できる機能を公開している。
 
+#![cfg_attr(feature = "custom-alloc", feature(allocator_api))]
+
+mod action_tree;
+mod atomic_float;
+mod bet_size;
+mod bunching;
+mod card;
+mod game;
+mod hand;
+mod hand_table;
+mod interface;
+mod mutex_like;
+mod range;
+mod sliceop;
+mod solver;
+mod utility;
+mod wit_models;
+
+use core::panic;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::{
-    action_tree::{Action, ActionTree, TreeConfig},
-    bet_size::BetSizeOptions,
-    card::CardConfig,
-    game::{ActionHistoryDetail, PostFlopGame},
-    range::{card_from_str, flop_from_str, hole_to_string, Range},
+    game::ActionHistoryDetail,
+    range::{card_from_chars, card_from_str, card_to_string},
     utility::{compute_average, finalize},
-    wit_models::wit_conversation::*,
 };
+use action_tree::{Action, ActionTree, TreeConfig};
+use bet_size::BetSizeOptions;
+use card::CardConfig;
+use game::PostFlopGame;
+use range::{flop_from_str, hole_to_string, Range};
 
-use crate::bindings::export;
 #[allow(warnings)]
+mod bindings;
 use crate::bindings::exports::holdem_solver::host::game_manager;
+use crate::wit_models::wit_conversation::*;
+// use bindings::exports::holdem_solver::host::my_host;
 // use chrono::Local;
 
 pub struct MyGame {
@@ -73,13 +95,9 @@ impl game_manager::GuestGameResource for MyGame {
 
     fn action(&self, action_num: u32) -> Result<bool, String> {
         let mut mut_game = self.game.borrow_mut();
-        if mut_game.is_chance_node() {
-            Err("This action is invalid.".to_string())
-        } else {
-            mut_game.play(action_num as usize); // Check
-            mut_game.cache_normalized_weights();
-            Ok(true)
-        }
+        mut_game.play(action_num as usize); // Check
+        mut_game.cache_normalized_weights();
+        Ok(true)
     }
 
     fn get_range(&self, player: u32) -> Vec<f32> {
@@ -114,8 +132,10 @@ impl game_manager::GuestGameResource for MyGame {
     fn get_board_cards(&self) -> Vec<String> {
         let mut_game = self.game.borrow_mut();
         let borad_cards = mut_game.current_board();
-        let borad_cards_string: Vec<String> =
-            borad_cards.into_iter().map(|c| c.to_string()).collect();
+        let borad_cards_string: Vec<String> = borad_cards
+            .into_iter()
+            .map(|c| card_to_string(c).unwrap())
+            .collect();
         borad_cards_string
     }
 
@@ -227,5 +247,5 @@ impl WasmUtils {
     }
 }
 
-// bindings::export!(MyGame with_types_in bindings);
-export!(MyGame with_types_in crate::bindings);
+// bindings::export!(MyFunction with_types_in bindings);
+bindings::export!(MyGame with_types_in bindings);

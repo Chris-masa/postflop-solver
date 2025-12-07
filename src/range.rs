@@ -325,9 +325,7 @@ pub fn flop_from_str(s: &str) -> Result<[Card; 3], String> {
         return Err("Expected exactly three cards".to_string());
     }
 
-    result.sort_unstable();
-
-    if result[0] == result[1] || result[1] == result[2] {
+    if result[0] == result[1] || result[1] == result[2] || result[0] == result[2] {
         return Err("Cards must be unique".to_string());
     }
 
