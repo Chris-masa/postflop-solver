@@ -53,8 +53,8 @@ impl game_manager::GuestGameResource for MyGame {
         // GameResource::new(...) はバインディング生成に含まれるスマートポインタ型
         let card_config: CardConfig = CardConfig {
             range: [
-                Range::from_str("77+,AQo+,KJo+,A4s+,KTs+,QTs+,JTs+").unwrap(),
-                Range::from_str("22+,A2s+,K2s+,Q5s+,J7s+,T8s+,98s+").unwrap(),
+                Range::from_str("TT+,AQo+,KJo+,A4s+").unwrap(),
+                Range::from_str("22+,A2o+,K2o+,A2s+,K7s+,Q8s+,J9s+,T9s+").unwrap(),
             ],
             flop: flop_from_str(flop_card_str.as_str()).unwrap(),
             ..Default::default()
@@ -149,13 +149,9 @@ impl game_manager::GuestGameResource for MyGame {
 
     fn apply_history(&self, history: Vec<u32>) -> Result<bool, ()> {
         let mut mut_game = self.game.borrow_mut();
-        let history_usize: &[usize] = unsafe {
-            std::slice::from_raw_parts(
-                history.as_ptr() as *const usize,
-                history.len() * std::mem::size_of::<u32>(),
-            )
-        };
-        mut_game.apply_history(history_usize);
+        let history_usize: Vec<usize> = history.into_iter().map(|c| c as usize).collect();
+        let history_usize_address: &[usize] = history_usize.as_slice();
+        mut_game.apply_history(history_usize_address);
         mut_game.cache_normalized_weights();
         Ok(true)
     }
