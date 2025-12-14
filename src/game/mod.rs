@@ -18,7 +18,7 @@ use std::collections::HashMap;
 #[cfg(feature = "bincode")]
 use bincode::{Decode, Encode};
 
-#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
 #[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 enum State {

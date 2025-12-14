@@ -58,10 +58,12 @@ fn wasm_lib_test_apply_history() -> Result<()> {
 
     // resource の投影を取得
     let gr = gm.game_resource();
+    println!("GameResource obtained.");
 
     // WIT: `new: static func(...) -> game-resource;`
-    // → wasmtime の生成では `call_new` になります
+    // → wasmtime の生成では `call_new`
     let game = gr.call_new(&mut store, "AsKsQs")?;
+    println!("Game created.");
 
     // get-game-status: func() -> wit-game-status
     let status = gr.call_get_game_status(&mut store, game)?;
@@ -69,6 +71,26 @@ fn wasm_lib_test_apply_history() -> Result<()> {
         status,
         exports::holdem_solver::host::game_manager::WitGameStatus::OopAction
     );
+
+    // カードIndex取得テスト
+    let mut card = gr
+        .call_get_card_index_from_str(&mut store, game, "2h")
+        .unwrap()
+        .unwrap();
+    println!("Card Index for 2h: {}", card);
+    assert_eq!(card, 2); // 2h = 1
+    card = gr
+        .call_get_card_index_from_str(&mut store, game, "As")
+        .unwrap()
+        .unwrap();
+    println!("Card Index for As: {}", card);
+    assert_eq!(card, 51); // As = 51
+    card = gr
+        .call_get_card_index_from_str(&mut store, game, "Js")
+        .unwrap()
+        .unwrap();
+    println!("Card Index for Js: {}", card);
+    assert_eq!(card, 39); // Td = 33
 
     // OOP Action 1
     let check: bool = gr.call_action(&mut store, game, 0).unwrap().unwrap();
@@ -91,13 +113,24 @@ fn wasm_lib_test_apply_history() -> Result<()> {
     let now_histry_1 = gr.call_get_history(&mut store, game)?;
     assert_eq!(now_histry_1, [0, 0]);
 
+    // apply前のvalid actions historyテスト
+    let mut valid_actions_history = gr.call_get_valid_actions_history(&mut store, game)?;
+    for (round_idx, actions_detail) in valid_actions_history.iter().enumerate() {
+        println!("Round {}: {:?}", round_idx + 1, actions_detail);
+    }
+
     println!("--- apply history test ---");
 
     // apply history
     let history: Vec<u32> = vec![1, 1]; // OOP: bet, IP: call
-    gr.call_apply_history(&mut store, game, &history)?;
+    let result = gr.call_apply_history(&mut store, game, &history)?;
     let now_histry_2 = gr.call_get_history(&mut store, game)?;
     assert_eq!(now_histry_2, [1, 1]);
+
+    valid_actions_history = gr.call_get_valid_actions_history(&mut store, game)?;
+    for (round_idx, actions_detail) in valid_actions_history.iter().enumerate() {
+        println!("Round {}: {:?}", round_idx + 1, actions_detail);
+    }
 
     Ok(())
 }

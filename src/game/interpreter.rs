@@ -16,6 +16,7 @@ fn decode_signed_slice(slice: &[i16], scale: f32) -> Vec<f32> {
 
 impl PostFlopGame {
     /// Moves the current node back to the root node.
+    /// ※この関数は、ゲーム計算中にも使われるので、MemoryAllocated以上のステータスが必要な関数は動かせない
     #[inline]
     pub fn back_to_root(&mut self) {
         if self.state <= State::Uninitialized {
@@ -37,7 +38,7 @@ impl PostFlopGame {
         self.assign_zero_weights();
     }
 
-    pub fn add_flop_fistory_detail(&mut self) -> () {
+    pub fn add_flop_history_detail(&mut self) -> () {
         let current_actions_detail = self.aggr_strategy_detail();
         self.valid_actions_history.push(current_actions_detail);
     }
@@ -81,6 +82,7 @@ impl PostFlopGame {
         }
 
         self.back_to_root();
+        self.add_flop_history_detail(); // フロップのHistoryは手動追加になってしまっている
         for &action in history {
             self.play(action);
         }

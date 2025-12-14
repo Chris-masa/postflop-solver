@@ -74,7 +74,7 @@ impl game_manager::GuestGameResource for MyGame {
         game.allocate_memory(true);
         finalize(&mut game); // 演算をしているっぽい。
         game.cache_normalized_weights();
-        game.add_flop_fistory_detail(); // フロップのHistoryは手動追加になってしまっている
+        game.add_flop_history_detail(); // フロップのHistoryは手動追加になってしまっている
         game_manager::GameResource::new(Self {
             game: std::cell::RefCell::new(game),
         })
@@ -156,14 +156,6 @@ impl game_manager::GuestGameResource for MyGame {
         Ok(true)
     }
 
-    fn get_card_index_from_str(&self, card_str: String) -> Result<u32, String> {
-        let card_char: &str = &card_str;
-        match card_from_str(card_char) {
-            Ok(card) => Ok(card as u32),
-            Err(e) => Err(format!("Error parsing card string: {}", e)),
-        }
-    }
-
     fn get_history(&self) -> Vec<u32> {
         let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
         let history_usize: &[usize] = mut_game.history();
@@ -216,6 +208,14 @@ impl game_manager::GuestGameResource for MyGame {
             } else {
                 panic!("Invalid current player");
             }
+        }
+    }
+
+    fn get_card_index_from_str(&self, card_str: String) -> Result<u32, String> {
+        let card_char: &str = &card_str;
+        match card_from_str(card_char) {
+            Ok(card) => Ok(card as u32),
+            Err(e) => Err(format!("Error parsing card string: {}", e)),
         }
     }
 
