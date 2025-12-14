@@ -1,4 +1,7 @@
 use anyhow::{anyhow, Result};
+use exports::holdem_solver::host::game_manager::WitGameStatus::{
+    Chance, IpAction, OopAction, Terminal,
+};
 use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
@@ -67,10 +70,7 @@ fn wasm_lib_test_apply_history() -> Result<()> {
 
     // get-game-status: func() -> wit-game-status
     let status = gr.call_get_game_status(&mut store, game)?;
-    assert_eq!(
-        status,
-        exports::holdem_solver::host::game_manager::WitGameStatus::OopAction
-    );
+    assert_eq!(status, OopAction);
 
     // カードIndex取得テスト
     let mut card = gr
@@ -113,23 +113,21 @@ fn wasm_lib_test_apply_history() -> Result<()> {
     let now_histry_1 = gr.call_get_history(&mut store, game)?;
     assert_eq!(now_histry_1, [0, 0]);
 
-    // apply前のvalid actions historyテスト
-    let mut valid_actions_history = gr.call_get_valid_actions_history(&mut store, game)?;
-    for (round_idx, actions_detail) in valid_actions_history.iter().enumerate() {
-        println!("Round {}: {:?}", round_idx + 1, actions_detail);
-    }
-
     println!("--- apply history test ---");
 
     // apply history
-    let history: Vec<u32> = vec![1, 1]; // OOP: bet, IP: call
-    let result = gr.call_apply_history(&mut store, game, &history)?;
+    let history: Vec<u32> = vec![1, 1, 30, 0, 1, 0]; // OOP: bet, IP: call
+    gr.call_apply_history(&mut store, game, &history)?;
     let now_histry_2 = gr.call_get_history(&mut store, game)?;
-    assert_eq!(now_histry_2, [1, 1]);
+    assert_eq!(now_histry_2, [1, 1, 30, 0, 1, 0]); // bet call deal check bet fold.
 
-    valid_actions_history = gr.call_get_valid_actions_history(&mut store, game)?;
+    let valid_actions_history = gr.call_get_valid_actions_history(&mut store, game)?;
+    let status_index = [
+        OopAction, IpAction, Chance, OopAction, IpAction, OopAction, Terminal,
+    ];
     for (round_idx, actions_detail) in valid_actions_history.iter().enumerate() {
-        println!("Round {}: {:?}", round_idx + 1, actions_detail);
+        // println!("Round {}: {:?}", round_idx + 1, actions_detail);
+        assert_eq!(actions_detail.game_status, status_index[round_idx]);
     }
 
     Ok(())

@@ -74,7 +74,6 @@ impl game_manager::GuestGameResource for MyGame {
         game.allocate_memory(true);
         finalize(&mut game); // 演算をしているっぽい。
         game.cache_normalized_weights();
-        game.add_flop_history_detail(); // フロップのHistoryは手動追加になってしまっている
         game_manager::GameResource::new(Self {
             game: std::cell::RefCell::new(game),
         })
