@@ -65,7 +65,7 @@ fn wasm_lib_test_apply_history() -> Result<()> {
 
     // WIT: `new: static func(...) -> game-resource;`
     // → wasmtime の生成では `call_new`
-    let game = gr.call_new(&mut store, "AsKsQs")?;
+    let game = gr.call_new(&mut store, "AsKsQs", 1)?;
     println!("Game created.");
 
     // get-game-status: func() -> wit-game-status

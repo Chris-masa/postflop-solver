@@ -810,7 +810,7 @@ impl PostFlopGame {
         };
 
         info.num_storage += node.num_elements as u64;
-        if (info.num_storage % 10000 == 0) {
+        if info.num_storage % 10000 == 0 {
             println!(
                 "num_storage: {}, num_elements: {}",
                 info.num_storage, node.num_elements

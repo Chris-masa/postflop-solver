@@ -13,6 +13,7 @@ use crate::bunching::*;
 use crate::game::*;
 use crate::interface::*;
 use bincode::{Decode, Encode};
+use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::Path;
@@ -62,15 +63,10 @@ pub fn save_data_into_std_write<T: FileData, W: Write>(
     data: &T,
     memo: &str,
     writer: &mut W,
-    compression_level: Option<i32>,
+    compression_level: Option<u32>,
 ) -> Result<(), String> {
     if !data.is_ready_to_save() {
         return Err("Data is not ready to save".to_string());
-    }
-
-    #[cfg(not(feature = "zstd"))]
-    if compression_level.is_some() {
-        return Err("Compression is not supported".to_string());
     }
 
     encode_into_std_write(MAGIC, writer, "Failed to write magic number")?;
@@ -95,20 +91,17 @@ pub fn save_data_into_std_write<T: FileData, W: Write>(
             .map_err(|e| format!("Failed to flush writer: {}", e))?;
     }
 
-    #[cfg(feature = "zstd")]
     if let Some(compression_level) = compression_level {
-        let mut zstd_encoder = zstd::stream::Encoder::new(writer, compression_level)
-            .map_err(|e| format!("Failed to create zstd encoder: {}", e))?;
+        let mut flate2_encoder = GzEncoder::new(writer, Compression::new(compression_level));
 
         #[cfg(feature = "rayon")]
-        zstd_encoder
-            .multithread(rayon::current_num_threads() as u32)
-            .map_err(|e| format!("Failed to enable multithreaded zstd encoder: {}", e))?;
-
-        encode_into_std_write(data, &mut zstd_encoder, "Failed to write data")?;
-        zstd_encoder
+        // flate2_encoder
+        //     .multithread(rayon::current_num_threads() as u32)
+        //     .map_err(|e| format!("Failed to enable multithreaded zstd encoder: {}", e))?;
+        encode_into_std_write(data, &mut flate2_encoder, "Failed to write data")?;
+        flate2_encoder
             .finish()
-            .map_err(|e| format!("Failed to finish zstd encoder: {}", e))?
+            .map_err(|e| format!("Failed to finish flate2 encoder: {}", e))?
             .flush()
             .map_err(|e| format!("Failed to flush writer: {}", e))?;
     }
@@ -126,13 +119,13 @@ pub fn save_data_into_std_write<T: FileData, W: Write>(
 /// - `data`: The data to be saved, which is either a [`PostFlopGame`] or a [`BunchingData`].
 /// - `memo`: A memo string to be saved with the data.
 /// - `path`: The path to the file to save.
-/// - `compression_level`: The zstd compression level to use. If `None`, no compression is used.
-///   `Some(level)` can only be specified if the `zstd` feature is enabled.
+/// - `compression_level`: The flate2 compression level to use. If `None`, no compression is used.
+///   `Some(level)` can only be specified if the `flate2` feature is enabled.
 pub fn save_data_to_file<T: FileData, P: AsRef<Path>>(
     data: &T,
     memo: &str,
     path: P,
-    compression_level: Option<i32>,
+    compression_level: Option<u32>,
 ) -> Result<(), String> {
     let file = File::create(path).map_err(|e| format!("Failed to create file: {}", e))?;
     let mut writer = BufWriter::new(file);
@@ -171,45 +164,44 @@ pub fn load_data_from_std_read<T: FileData, R: Read>(
     if magic != MAGIC {
         return Err("Magic number is invalid".to_string());
     }
+    println!("magic: {:x}", magic);
 
     let version: u8 = decode_from_std_read(reader, "Failed to read version number")?;
     if version != VERSION {
         return Err("Version number is invalid".to_string());
     }
+    println!("version: {}", version);
 
     let compression_type: u8 = decode_from_std_read(reader, "Failed to read compression type")?;
     if compression_type > 1 {
         return Err("Compression type is invalid".to_string());
     }
-
-    #[cfg(not(feature = "zstd"))]
-    if compression_type == 1 {
-        return Err("Compression is not supported".to_string());
-    }
+    print!("compression type: {}", compression_type);
 
     let data_type: u8 = decode_from_std_read(reader, "Failed to read data type")?;
     if data_type != T::data_type() as u8 {
         return Err("Data type is invalid".to_string());
     }
+    println!("data type: {}", data_type);
 
     let estimated_memory_usage: u64 = decode_from_std_read(reader, "Failed to read memory usage")?;
     if let Some(max_memory_usage) = max_memory_usage {
         if estimated_memory_usage > max_memory_usage {
+            println!(
+                "Estimated memory usage: {}, Max allowed: {}",
+                estimated_memory_usage, max_memory_usage
+            );
             return Err("Estimated memory usage is too large".to_string());
         }
     }
 
     let memo: String = decode_from_std_read(reader, "Failed to read memo")?;
 
-    #[cfg(not(feature = "zstd"))]
-    let data: T = decode_from_std_read(reader, "Failed to read data")?;
-    #[cfg(feature = "zstd")]
     let data: T = if compression_type == 0 {
         decode_from_std_read(reader, "Failed to read data")?
     } else {
-        let mut zstd_decoder = zstd::stream::Decoder::new(reader)
-            .map_err(|e| format!("Failed to create zstd decoder: {}", e))?;
-        decode_from_std_read(&mut zstd_decoder, "Failed to read data")?
+        let mut flate2_decoder = GzDecoder::new(reader);
+        decode_from_std_read(&mut flate2_decoder, "Failed to read data")?
     };
 
     Ok((data, memo))

@@ -62,7 +62,7 @@ fn game_manager_api_roundtrip() -> Result<()> {
 
     // WIT: `new: static func(...) -> game-resource;`
     // → wasmtime の生成では `call_new` になります
-    let game = gr.call_new(&mut store, "AsKsQs")?;
+    let game = gr.call_new(&mut store, "AsKsQs", 0)?;
 
     // get-game-status: func() -> wit-game-status
     let status = gr.call_get_game_status(&mut store, game)?;

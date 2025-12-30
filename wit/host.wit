@@ -46,7 +46,8 @@ interface game-manager {
   }
 
   resource game-resource {
-    new: static func(flop-card-str: string) -> game-resource;
+    new: static func(flop-card-str: string, mode: u8) -> game-resource;
+    from-cache: static func(cache: list<u8>) -> result<game-resource, string>;
     action: func(action-num: u32) -> result<bool, string>;
     card-deal: func(card-str: string) -> result<bool, string>;
     get-range: func(player: u32) -> list<f32>;
@@ -60,6 +61,7 @@ interface game-manager {
     get-strategy: func() -> list<strategy-map>;
     get-game-status: func() -> wit-game-status;
     apply-history: func(history: list<u32>) -> result<bool>;
+    get-compressed-result: func() -> result<list<u8>, string>;
   }
 }
 

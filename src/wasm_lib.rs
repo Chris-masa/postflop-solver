@@ -8,6 +8,7 @@ mod atomic_float;
 mod bet_size;
 mod bunching;
 mod card;
+mod file;
 mod game;
 mod hand;
 mod hand_table;
@@ -20,23 +21,24 @@ mod utility;
 mod wit_models;
 
 use core::panic;
+use solver::solve_step;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::{
     game::ActionHistoryDetail,
-    range::{card_from_chars, card_from_str, card_to_string},
-    utility::{compute_average, finalize},
+    range::{card_from_str, card_to_string},
+    utility::{compute_average, compute_exploitability, finalize},
 };
 use action_tree::{Action, ActionTree, TreeConfig};
 use bet_size::BetSizeOptions;
 use card::CardConfig;
+use file::{save_data_into_std_write, save_data_to_file};
 use game::PostFlopGame;
 use range::{flop_from_str, hole_to_string, Range};
 
 #[allow(warnings)]
 mod bindings;
 use crate::bindings::exports::holdem_solver::host::game_manager;
-use crate::wit_models::wit_conversation::*;
 // use bindings::exports::holdem_solver::host::my_host;
 // use chrono::Local;
 
@@ -45,16 +47,26 @@ pub struct MyGame {
 }
 
 impl game_manager::GuestGameResource for MyGame {
-    fn new(flop_card_str: String) -> game_manager::GameResource {
+    fn new(flop_card_str: String, mode: u8) -> game_manager::GameResource {
         println!("Initial Proccess Start Running!!");
-        let betsize_option =
-            // BetSizeOptions::try_from(("15%,33%,50%,75%,100%,150%,a", "2.5x,3x,3.5x,4x,a")).unwrap();
-            BetSizeOptions::try_from(("33%", "")).unwrap();
+        let betsite_option;
+        if mode == 0 {
+            betsite_option = BetSizeOptions::try_from(("33%,70%", "")).unwrap();
+        } else if mode == 1 {
+            betsite_option = BetSizeOptions::try_from(("33%,75%,a", "3x,a")).unwrap();
+        } else if mode == 2 {
+            betsite_option =
+                BetSizeOptions::try_from(("15%,33%,50%,75%,100%,150%,a", "2.5x,3x,3.5x,4x,a"))
+                    .unwrap();
+        } else {
+            panic!("Invalid mode");
+        }
+        let betsize_option = betsite_option;
         // GameResource::new(...) はバインディング生成に含まれるスマートポインタ型
         let card_config: CardConfig = CardConfig {
             range: [
-                Range::from_str("TT+,AQo+,KJo+,A4s+").unwrap(),
-                Range::from_str("22+,A2o+,K2o+,A2s+,K7s+,Q8s+,J9s+,T9s+").unwrap(),
+                Range::from_str("AA-JJ,AQo+,KQo+,AKs-AQs,A5s").unwrap(), // OOP(UTG 4bet)
+                Range::from_str("QQ-88,AKo,AQs+,KJs+,QJs+,65s").unwrap(), // IP (BTN 4bet caller)
             ],
             flop: flop_from_str(flop_card_str.as_str()).unwrap(),
             ..Default::default()
@@ -72,11 +84,45 @@ impl game_manager::GuestGameResource for MyGame {
         let action_tree = ActionTree::new(tree_config).unwrap();
         let mut game: PostFlopGame = PostFlopGame::with_config(card_config, action_tree).unwrap();
         game.allocate_memory(true);
+
+        //// ↓ solve_stepロジックの内部実装。今後、外部関数化、もしくはWasm関数にすること。
+        let max_iterations = 100;
+        let target_exploitability = 10.0;
+
+        for iteration in 0..max_iterations {
+            // 1イテレーション実行
+            solve_step(&game, iteration);
+
+            // 3回ごとにexploitabilityを計算して進捗を確認
+            if (iteration + 1) % 3 == 0 {
+                let exploitability = compute_exploitability(&game);
+                println!(
+                    "Iteration: {}, Exploitability: {:.6e}",
+                    iteration + 1,
+                    exploitability
+                );
+
+                if exploitability <= target_exploitability {
+                    break;
+                }
+            }
+        }
+        //// ↑ solve関数ここまで
+
         finalize(&mut game); // 演算をしているっぽい。
         game.cache_normalized_weights();
+        // save_data_to_file(&game, "メモ", "game.flop", Some(3)); // 動かないが理由もよくわからない
         game_manager::GameResource::new(Self {
             game: std::cell::RefCell::new(game),
         })
+    }
+
+    fn from_cache(cache: Vec<u8>) -> Result<game_manager::GameResource, String> {
+        let game: PostFlopGame =
+            file::load_data_from_std_read(&mut &*cache, Some(isize::MAX as u64))?.0;
+        Ok(game_manager::GameResource::new(Self {
+            game: std::cell::RefCell::new(game),
+        }))
     }
 
     fn card_deal(&self, card_str: String) -> Result<bool, String> {
@@ -222,6 +268,16 @@ impl game_manager::GuestGameResource for MyGame {
     //     mutex_guaid_game = self.game.root();
     //     if mutex_guaid_game.is_terminal() {}
     // }
+
+    fn get_compressed_result(&self) -> Result<Vec<u8>, String> {
+        let mut_game = self.game.borrow_mut();
+        // 圧縮してバッファに保存
+        let mut buffer = Vec::new();
+        save_data_into_std_write(&*mut_game, "solved game", &mut buffer, Some(3))?;
+
+        // メモリをJavaScriptに渡す（解放はJavaScript側で行う）
+        Ok(buffer)
+    }
 }
 
 // ② interface 全体 (Guest)
