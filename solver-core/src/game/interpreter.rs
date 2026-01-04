@@ -277,6 +277,20 @@ impl PostFlopGame {
         ret
     }
 
+    #[inline]
+    pub fn get_opponent_previous_bet(&self) -> Option<i32> {
+        if self.node_history.len() < 2 {
+            return None;
+        }
+
+        // 1つ前のノードを取得
+        let prev_node = &self.node_arena[self.node_history[self.node_history.len() - 2]].lock();
+        match prev_node.prev_action {
+            Action::Bet(amount) | Action::Raise(amount) | Action::AllIn(amount) => Some(amount),
+            _ => None,
+        }
+    }
+
     /// Plays the given action. Playing an action from a terminal node is not allowed.
     ///
     /// - `action`
@@ -956,8 +970,9 @@ impl PostFlopGame {
             let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
                 actions: action_ratios,
                 game_status: game_status,
-                street: self.get_street(),
                 pot_without_current_bet: pot_size,
+                opponent_bet_size: self.get_opponent_previous_bet(),
+                street: self.get_street(),
             };
             return action_history_detail;
         } else if self.node().is_terminal() {
@@ -965,8 +980,9 @@ impl PostFlopGame {
             return ActionHistoryDetail {
                 actions: HashMap::new(),
                 game_status: game_status,
-                street: self.get_street(),
                 pot_without_current_bet: pot_size,
+                opponent_bet_size: self.get_opponent_previous_bet(),
+                street: self.get_street(),
             };
         } else {
             let player = self.current_player();
@@ -998,8 +1014,9 @@ impl PostFlopGame {
             let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
                 actions: action_ratios,
                 game_status: game_status,
-                street: self.get_street(),
                 pot_without_current_bet: pot_size,
+                opponent_bet_size: self.get_opponent_previous_bet(),
+                street: self.get_street(),
             };
             action_history_detail
         }

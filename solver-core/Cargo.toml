@@ -1,0 +1,30 @@
+[package]
+name = "solver-core"
+version = "0.1.0"
+authors = ["Wataru Inariba"]
+edition = "2021"
+description = "An open-source postflop solver for Texas hold'em poker"
+documentation = "https://b-inary.github.io/postflop_solver/postflop_solver/"
+repository = "https://github.com/b-inary/postflop-solver"
+
+
+[dependencies]
+bincode = { version = "2.0.0-rc.3", optional = true }
+wit-bindgen-rt = { version = "0.42.1", features = ["bitflags"], optional = true }
+chrono = {version = "0.4.41", optional = true}
+rayon = { version = "1.10.0", optional = true }
+once_cell = {version = "1.18.0", optional = true}
+regex = "1.9.6"
+flate2 = "1"
+anyhow = "1.0.98"
+
+[features]
+# default = ["bincode" , "rayon"]
+default = ["bincode", "chrono", "once_cell", "rayon"]
+custom-alloc = []
+# bincode = ["dep:bincode"]
+# rayon = ["dep:rayon", "zstd?/zstdmt"]
+
+[lib]
+crate-type = ["cdylib", "rlib"] # cdylib: 「このクレートは共有ライブラリとして出力すべきだ」という明示。Rustのデフォルトでは lib クレートは Rust専用（rlib）形式でビルドされ、.wasm は生成されない。
+

@@ -1,5 +1,7 @@
 // クレーと外部からでもモジュールを使用できるようにするためのファイル。
 // 外部からこのクレートライブラリをImportした時、使用できる機能を公開している。
+// 目的
+//// ここに記載されている
 
 #![cfg_attr(feature = "custom-alloc", feature(allocator_api))]
 
@@ -18,36 +20,64 @@ mod range;
 mod sliceop;
 mod solver;
 mod utility;
-mod wit_models;
 
 use core::panic;
 use solver::solve_step;
 use std::{collections::HashMap, str::FromStr};
 
-use crate::{
-    game::ActionHistoryDetail,
-    range::{card_from_str, card_to_string},
-    utility::{compute_average, compute_exploitability, finalize},
-};
-use action_tree::{Action, ActionTree, TreeConfig};
+pub use action_tree::{ActionTree, TreeConfig};
 use bet_size::BetSizeOptions;
 use card::CardConfig;
-use file::{save_data_into_std_write, save_data_to_file};
-use game::PostFlopGame;
-use range::{flop_from_str, hole_to_string, Range};
+use file::save_data_into_std_write; // , save_data_to_file};
+use range::{card_from_str, card_to_string, flop_from_str, hole_to_string, Range};
+use utility::{compute_average, compute_exploitability, finalize};
 
-#[allow(warnings)]
-mod bindings;
-use crate::bindings::exports::holdem_solver::host::game_manager;
-// use bindings::exports::holdem_solver::host::my_host;
-// use chrono::Local;
+// 引数、戻り値で使用する型は、pubで公開する必要がある。
+pub use crate::{
+    action_tree::{Action, BoardState, GameStatus},
+    game::ActionHistoryDetail,
+    game::PostFlopGame,
+};
 
-pub struct MyGame {
+#[derive(Clone)]
+pub struct Strategy {
+    pub weight: f32,
+    pub action_ratio: f32,
+}
+
+#[derive(Clone)]
+pub struct StrategyMap {
+    pub hand: String,
+    pub action: Action,
+    pub strategy: Strategy,
+}
+
+pub struct PostFlopGameInterface {
     game: std::cell::RefCell<PostFlopGame>,
 }
 
-impl game_manager::GuestGameResource for MyGame {
-    fn new(flop_card_str: String, mode: u8) -> game_manager::GameResource {
+pub trait PostFlopGameTrait {
+    fn new(flop_card_str: String, mode: u8) -> PostFlopGameInterface;
+    fn from_cache(cache: Vec<u8>) -> Result<PostFlopGameInterface, String>;
+    fn card_deal(&self, card_str: String) -> Result<bool, String>;
+    fn action(&self, action_num: u32) -> Result<bool, String>;
+    fn get_range(&self, player: usize) -> Vec<f32>;
+    fn get_card_wights(&self, player: usize) -> Vec<(String, f32)>;
+    fn get_node_info(&self) -> Vec<f32>;
+    fn get_board_cards(&self) -> Vec<String>;
+    fn get_available_action(&self) -> Vec<Action>;
+    fn apply_history(&self, history: Vec<u32>) -> Result<bool, ()>;
+    fn get_history(&self) -> Vec<u32>;
+    fn get_valid_actions_history(&self) -> Vec<ActionHistoryDetail>;
+    fn get_strategy(&self) -> Vec<StrategyMap>;
+    fn get_game_status(&self) -> GameStatus;
+    fn get_card_index_from_str(&self, card_str: String) -> Result<u32, String>;
+    // fn get_game_status(&self) -> String;
+    fn get_compressed_result(&self) -> Result<Vec<u8>, String>;
+}
+
+impl PostFlopGameTrait for PostFlopGameInterface {
+    fn new(flop_card_str: String, mode: u8) -> PostFlopGameInterface {
         println!("Initial Proccess Start Running!!");
         let betsite_option;
         if mode == 0 {
@@ -112,17 +142,17 @@ impl game_manager::GuestGameResource for MyGame {
         finalize(&mut game); // 演算をしているっぽい。
         game.cache_normalized_weights();
         // save_data_to_file(&game, "メモ", "game.flop", Some(3)); // 動かないが理由もよくわからない
-        game_manager::GameResource::new(Self {
+        PostFlopGameInterface {
             game: std::cell::RefCell::new(game),
-        })
+        }
     }
 
-    fn from_cache(cache: Vec<u8>) -> Result<game_manager::GameResource, String> {
+    fn from_cache(cache: Vec<u8>) -> Result<PostFlopGameInterface, String> {
         let game: PostFlopGame =
             file::load_data_from_std_read(&mut &*cache, Some(isize::MAX as u64))?.0;
-        Ok(game_manager::GameResource::new(Self {
+        Ok(PostFlopGameInterface {
             game: std::cell::RefCell::new(game),
-        }))
+        })
     }
 
     fn card_deal(&self, card_str: String) -> Result<bool, String> {
@@ -145,16 +175,16 @@ impl game_manager::GuestGameResource for MyGame {
         Ok(true)
     }
 
-    fn get_range(&self, player: u32) -> Vec<f32> {
+    fn get_range(&self, player: usize) -> Vec<f32> {
         let mut_game = self.game.borrow_mut();
-        let range = mut_game.card_config().range[player as usize];
+        let range = mut_game.card_config().range[player];
         range.raw_data().to_vec()
     }
 
-    fn get_card_wights(&self, player: u32) -> Vec<(String, f32)> {
+    fn get_card_wights(&self, player: usize) -> Vec<(String, f32)> {
         let mut cards_weights: Vec<(String, f32)> = Vec::new();
         let mut_game = self.game.borrow_mut();
-        let range = mut_game.card_config().range[player as usize];
+        let range = mut_game.card_config().range[player];
         let weights = range.get_hands_weights(0);
         for (hands, weight) in weights.0.iter().zip(weights.1.iter()) {
             let hands_str = hole_to_string(*hands).unwrap();
@@ -184,11 +214,10 @@ impl game_manager::GuestGameResource for MyGame {
         borad_cards_string
     }
 
-    fn get_available_action(&self) -> Vec<game_manager::WitAction> {
+    fn get_available_action(&self) -> Vec<Action> {
         let mut_game = self.game.borrow_mut();
         let actions = mut_game.available_actions();
-        let wit_action: Vec<game_manager::WitAction> =
-            actions.iter().map(|c| c.clone().into()).collect();
+        let wit_action: Vec<Action> = actions.iter().map(|c| c.clone().into()).collect();
         wit_action
     }
 
@@ -207,28 +236,23 @@ impl game_manager::GuestGameResource for MyGame {
         history_usize.into_iter().map(|c| *c as u32).collect()
     }
 
-    fn get_valid_actions_history(&self) -> Vec<game_manager::WitActionHistoryDetail> {
+    fn get_valid_actions_history(&self) -> Vec<ActionHistoryDetail> {
         let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
         let valid_actions_history: Vec<ActionHistoryDetail> = mut_game.get_valid_actions_history();
-        let valid_actions_history_wit_actions: Vec<game_manager::WitActionHistoryDetail> =
-            valid_actions_history
-                .into_iter()
-                .map(|detail| game_manager::WitActionHistoryDetail::from(detail))
-                .collect();
-        valid_actions_history_wit_actions
+        valid_actions_history
     }
 
-    fn get_strategy(&self) -> Vec<game_manager::StrategyMap> {
-        let mut strategy_list: Vec<game_manager::StrategyMap> = [].to_vec();
+    fn get_strategy(&self) -> Vec<StrategyMap> {
+        let mut strategy_list: Vec<StrategyMap> = [].to_vec();
         let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
         let strategy_with_hands: HashMap<String, HashMap<Action, (f32, f32)>> =
             mut_game.strategy_with_hands().unwrap();
         for (hand, strategy) in strategy_with_hands.iter() {
             for (action, (weight, action_ratio)) in strategy.iter() {
-                strategy_list.push(game_manager::StrategyMap {
+                strategy_list.push(StrategyMap {
                     hand: hand.clone(),
-                    action: game_manager::WitAction::from(*action),
-                    strategy: game_manager::Strategy {
+                    action: Action::from(*action),
+                    strategy: Strategy {
                         weight: *weight,
                         action_ratio: *action_ratio,
                     },
@@ -238,18 +262,18 @@ impl game_manager::GuestGameResource for MyGame {
         strategy_list
     }
 
-    fn get_game_status(&self) -> game_manager::WitGameStatus {
+    fn get_game_status(&self) -> GameStatus {
         let mut_game: std::cell::RefMut<'_, PostFlopGame> = self.game.borrow_mut();
         if mut_game.is_chance_node() {
-            return game_manager::WitGameStatus::Chance;
+            return GameStatus::Chance;
         } else if mut_game.is_terminal_node() {
-            return game_manager::WitGameStatus::Terminal;
+            return GameStatus::Terminal;
         } else {
             let current_player = mut_game.current_player();
             if current_player == 0 {
-                return game_manager::WitGameStatus::OopAction;
+                return GameStatus::Oop;
             } else if current_player == 1 {
-                return game_manager::WitGameStatus::IpAction;
+                return GameStatus::Ip;
             } else {
                 panic!("Invalid current player");
             }
@@ -280,23 +304,10 @@ impl game_manager::GuestGameResource for MyGame {
     }
 }
 
-// ② interface 全体 (Guest)
-impl game_manager::Guest for MyGame {
-    type GameResource = Self;
-}
-
-struct WasmUtils {}
-impl WasmUtils {
-    fn weighted_average(slice: &[f32], weights: &[f32]) -> f64 {
-        let mut sum = 0.0;
-        let mut weight_sum = 0.0;
-        for (&value, &weight) in slice.iter().zip(weights.iter()) {
-            sum += value as f64 * weight as f64;
-            weight_sum += weight as f64;
-        }
-        sum / weight_sum
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
     }
 }
-
-// bindings::export!(MyFunction with_types_in bindings);
-bindings::export!(MyGame with_types_in bindings);

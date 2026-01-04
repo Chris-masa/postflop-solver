@@ -1,4 +1,4 @@
-use postflop_solver::*;
+use solver_core::
 
 // メモ
 // 基本的に、フロップの3枚と2プレイヤーのレンジ構成が決まれば、

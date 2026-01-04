@@ -66,6 +66,7 @@ impl Game for PostFlopGame {
 
     #[inline]
     fn set_solved(&mut self) {
+        println!("debug comment: set solved!!");
         self.state = State::Solved;
         let history = self.action_history.clone();
         self.apply_history(&history);

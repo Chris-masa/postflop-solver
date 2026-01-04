@@ -46,8 +46,10 @@ fn game_manager_io_test() -> Result<()> {
         },
     );
     // Component をロード（ここに余計なコードを混ぜない）
-    let component =
-        Component::from_file(&engine, "target/wasm32-wasip2/release/postflop_solver.wasm")?;
+    let component = Component::from_file(
+        &engine,
+        "../target/wasm32-wasip2/release/postflop_solver.wasm",
+    )?;
     // instantiate（※あなたの環境では Host_ が返る）
     let world = Host_::instantiate(&mut store, &component, &linker)?;
     // ✅ ここがポイント：

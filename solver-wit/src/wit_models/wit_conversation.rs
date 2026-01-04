@@ -1,10 +1,9 @@
-use super::super::action_tree;
-use crate::bindings::exports::holdem_solver::host::game_manager::{
-    Street, WitAction, WitActionHistoryDetail, WitActionRatio, WitGameStatus,
+pub use crate::bindings::exports::holdem_solver::host::game_manager::{
+    WitAction, WitActionHistoryDetail, WitActionRatio, WitGameStatus, WitStreet,
 };
-use crate::game::ActionHistoryDetail;
-use action_tree::Action;
 use std::cmp::Ordering;
+
+use solver_core::{Action, ActionHistoryDetail, BoardState, GameStatus};
 
 impl From<Action> for WitAction {
     fn from(action: Action) -> Self {
@@ -79,14 +78,14 @@ impl From<(Action, f32)> for WitActionRatio {
     }
 }
 
-impl From<action_tree::GameStatus> for WitGameStatus {
-    fn from(status: action_tree::GameStatus) -> Self {
+impl From<GameStatus> for WitGameStatus {
+    fn from(status: GameStatus) -> Self {
         match status {
-            action_tree::GameStatus::Chance => WitGameStatus::Chance,
-            action_tree::GameStatus::Ip => WitGameStatus::IpAction,
-            action_tree::GameStatus::Oop => WitGameStatus::OopAction,
-            action_tree::GameStatus::Terminal => WitGameStatus::Terminal,
-            action_tree::GameStatus::Unknown => panic!("Invalid game status"),
+            GameStatus::Chance => WitGameStatus::Chance,
+            GameStatus::Ip => WitGameStatus::IpAction,
+            GameStatus::Oop => WitGameStatus::OopAction,
+            GameStatus::Terminal => WitGameStatus::Terminal,
+            GameStatus::Unknown => panic!("Invalid game status"),
         }
     }
 }
@@ -105,10 +104,11 @@ impl From<ActionHistoryDetail> for WitActionHistoryDetail {
             action_ratio_list: tmp_list,
             game_status: WitGameStatus::from(detail.game_status),
             pot: detail.pot_without_current_bet as u32,
+            opponent_bet_size: detail.opponent_bet_size.and_then(|v| u32::try_from(v).ok()),
             street: match detail.street {
-                action_tree::BoardState::Flop => Street::Flop,
-                action_tree::BoardState::Turn => Street::Turn,
-                action_tree::BoardState::River => Street::River,
+                BoardState::Flop => WitStreet::Flop,
+                BoardState::Turn => WitStreet::Turn,
+                BoardState::River => WitStreet::River,
             },
         }
     }

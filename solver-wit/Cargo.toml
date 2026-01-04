@@ -1,0 +1,47 @@
+[package]
+name = "solver-wit"
+version = "0.1.0"
+authors = ["Wataru Inariba"]
+edition = "2021"
+description = "An open-source postflop solver for Texas hold'em poker"
+documentation = "https://b-inary.github.io/postflop_solver/postflop_solver/"
+repository = "https://github.com/b-inary/postflop-solver"
+
+
+[dependencies]
+bincode = { version = "2.0.0-rc.3", optional = true }
+wit-bindgen-rt = { version = "0.42.1", features = ["bitflags"], optional = true }
+chrono = {version = "0.4.41", optional = true}
+once_cell = {version = "1.18.0", optional = true}
+rayon = { version = "1.10.0", optional = true }
+regex = "1.9.6"
+flate2 = "1"
+anyhow = "1.0.98"
+solver_core = { package = "solver-core", path = "../solver-core" }
+
+[features]
+# default = ["bincode" , "rayon"]
+default = ["bincode", "wit-bindgen-rt", "chrono", "once_cell", "rayon"]
+custom-alloc = []
+wasm-tester = ["wasmtime", "wasmtime-wasi"] # optionalな場合はここに入れないとビルド対象にならない
+
+[lib]
+crate-type = ["cdylib", "rlib"] # cdylib: 「このクレートは共有ライブラリとして出力すべきだ」という明示。Rustのデフォルトでは lib クレートは Rust専用（rlib）形式でビルドされ、.wasm は生成されない。
+path = "src/wasm_lib.rs"
+
+[package.metadata.component]
+package = "holdem-solver:host"
+
+[package.metadata.component.target]
+path = "wit/host.wit"
+
+# テスト用
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# optional=true として feature 経由で有効化
+wasmtime = { version = "38", features = ["component-model"], optional = true }
+wasmtime-wasi = { version = "38", optional = true}
+
+[dev-dependencies]
+anyhow = "1"
+wasmtime = { version = "38"}
+wasmtime-wasi = { version = "38"}

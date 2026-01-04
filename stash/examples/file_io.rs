@@ -1,4 +1,4 @@
-use postflop_solver::*;
+use solver_core::*;
 
 fn main() {
     // see `basic.rs` for the explanation of the following code
