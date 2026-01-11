@@ -123,18 +123,16 @@ impl PostFlopGameTrait for PostFlopGameInterface {
             // 1イテレーション実行
             solve_step(&game, iteration);
 
-            // 3回ごとにexploitabilityを計算して進捗を確認
-            if (iteration + 1) % 3 == 0 {
-                let exploitability = compute_exploitability(&game);
-                println!(
-                    "Iteration: {}, Exploitability: {:.6e}",
-                    iteration + 1,
-                    exploitability
-                );
+            // 1回ごとにexploitabilityを計算して進捗を確認
+            let exploitability = compute_exploitability(&game);
+            println!(
+                "Iteration: {}, Exploitability: {:.6e}",
+                iteration + 1,
+                exploitability
+            );
 
-                if exploitability <= target_exploitability {
-                    break;
-                }
+            if exploitability <= target_exploitability {
+                break;
             }
         }
         //// ↑ solve関数ここまで

@@ -11,7 +11,7 @@ pub trait Game: Send + Sync {
 
     /// Returns the root node of game tree.
     #[doc(hidden)]
-    fn root(&self) -> MutexGuardLike<Self::Node>;
+    fn root<'a>(&'a self) -> MutexGuardLike<'a, Self::Node>;
 
     /// Returns the number of private hands of given player.
     #[doc(hidden)]
@@ -104,7 +104,7 @@ pub trait GameNode: Send + Sync {
 
     /// Returns the node after taking the given action.
     #[doc(hidden)]
-    fn play(&self, action: usize) -> MutexGuardLike<Self>;
+    fn play<'a>(&'a self, action: usize) -> MutexGuardLike<'a, Self>;
 
     /// Returns the strategy.
     #[doc(hidden)]

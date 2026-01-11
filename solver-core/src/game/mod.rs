@@ -34,7 +34,7 @@ enum State {
 pub struct ActionHistoryDetail {
     pub actions: HashMap<Action, f32>, // {check: 0.15, fold: 0.85}
     pub game_status: GameStatus,
-    pub pot_without_current_bet: i32,
+    pub pot_size: i32,
     pub opponent_bet_size: Option<i32>,
     pub street: BoardState,
 }

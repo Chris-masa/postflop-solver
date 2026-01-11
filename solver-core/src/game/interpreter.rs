@@ -278,17 +278,18 @@ impl PostFlopGame {
     }
 
     #[inline]
-    pub fn get_opponent_previous_bet(&self) -> Option<i32> {
-        if self.node_history.len() < 2 {
+    pub fn get_opponent_previous_bet(&mut self) -> Option<i32> {
+        if self.node_history.len() < 1 {
             return None;
         }
 
-        // 1つ前のノードを取得
-        let prev_node = &self.node_arena[self.node_history[self.node_history.len() - 2]].lock();
-        match prev_node.prev_action {
-            Action::Bet(amount) | Action::Raise(amount) | Action::AllIn(amount) => Some(amount),
+        // 直前のベット金額を取得
+        let prev_action = self.node().prev_action;
+        let prev_bet_amount = match prev_action {
+            Action::Bet(a) | Action::Raise(a) | Action::AllIn(a) => Some(a),
             _ => None,
-        }
+        };
+        prev_bet_amount
     }
 
     /// Plays the given action. Playing an action from a terminal node is not allowed.
@@ -951,17 +952,18 @@ impl PostFlopGame {
     }
 
     fn get_pot_size(&self) -> i32 {
-        let tota_bet_amount_in_this_street = self.total_bet_amount();
+        let total_bet_amount_in_this_street = self.total_bet_amount();
         self.tree_config().starting_pot
-            + tota_bet_amount_in_this_street[0]
-            + tota_bet_amount_in_this_street[1]
+            + total_bet_amount_in_this_street[0]
+            + total_bet_amount_in_this_street[1]
     }
 
-    pub fn aggr_strategy_detail(&self) -> ActionHistoryDetail {
+    pub fn aggr_strategy_detail(&mut self) -> ActionHistoryDetail {
         let actions = self.available_actions();
         let num_actions = actions.len();
         let game_status: GameStatus = self.node().game_status();
         let pot_size = self.get_pot_size();
+        let opponent_previous_bet = self.get_opponent_previous_bet();
         if self.node().is_chance() {
             let action_ratios = actions
                 .iter()
@@ -970,8 +972,8 @@ impl PostFlopGame {
             let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
                 actions: action_ratios,
                 game_status: game_status,
-                pot_without_current_bet: pot_size,
-                opponent_bet_size: self.get_opponent_previous_bet(),
+                pot_size: pot_size,
+                opponent_bet_size: opponent_previous_bet,
                 street: self.get_street(),
             };
             return action_history_detail;
@@ -980,8 +982,8 @@ impl PostFlopGame {
             return ActionHistoryDetail {
                 actions: HashMap::new(),
                 game_status: game_status,
-                pot_without_current_bet: pot_size,
-                opponent_bet_size: self.get_opponent_previous_bet(),
+                pot_size: pot_size,
+                opponent_bet_size: opponent_previous_bet,
                 street: self.get_street(),
             };
         } else {
@@ -1014,8 +1016,8 @@ impl PostFlopGame {
             let action_history_detail: ActionHistoryDetail = ActionHistoryDetail {
                 actions: action_ratios,
                 game_status: game_status,
-                pot_without_current_bet: pot_size,
-                opponent_bet_size: self.get_opponent_previous_bet(),
+                pot_size: pot_size,
+                opponent_bet_size: opponent_previous_bet,
                 street: self.get_street(),
             };
             action_history_detail
@@ -1170,7 +1172,7 @@ impl PostFlopGame {
 
     /// Returns the reference to the current node.
     #[inline]
-    fn node(&self) -> MutexGuardLike<PostFlopNode> {
+    fn node<'a>(&'a self) -> MutexGuardLike<'a, PostFlopNode> {
         self.node_arena[self.node_history.last().cloned().unwrap_or(0)].lock()
     }
 

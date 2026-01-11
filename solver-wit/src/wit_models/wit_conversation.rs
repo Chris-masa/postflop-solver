@@ -103,7 +103,7 @@ impl From<ActionHistoryDetail> for WitActionHistoryDetail {
         WitActionHistoryDetail {
             action_ratio_list: tmp_list,
             game_status: WitGameStatus::from(detail.game_status),
-            pot: detail.pot_without_current_bet as u32,
+            pot: detail.pot_size as u32,
             opponent_bet_size: detail.opponent_bet_size.and_then(|v| u32::try_from(v).ok()),
             street: match detail.street {
                 BoardState::Flop => WitStreet::Flop,
